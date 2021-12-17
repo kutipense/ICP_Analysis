@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+AlignConsecutiveDeclarations: 'true'
+AlignOperands: 'true'
+AllowShortBlocksOnASingleLine: 'true'
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: WithoutElse
+BinPackArguments: 'true'
+ColumnLimit: '120'
