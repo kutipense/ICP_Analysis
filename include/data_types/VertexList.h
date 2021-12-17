@@ -11,9 +11,11 @@
 struct VertexList {
   using Ptr           = std::shared_ptr<VertexList>;
   using Vector        = std::vector<std::array<double, 3>>;
+  using VectorByte    = std::vector<std::array<unsigned char, 4>>;
   using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  VertexList::Vector vertices;
+  VertexList::Vector     vertices;
+  VertexList::VectorByte colors;
 
   PointCloudXYZ::Ptr toPCL() {
     PointCloudXYZ::Ptr cloud = boost::make_shared<PointCloudXYZ>();
@@ -28,7 +30,7 @@ struct VertexList {
     return vertex_list;
   }
 
-  bool exportToOFF(const std::string& filename) {
+  bool exportToOFF(const std::string& filename, bool with_color = false) {
     std::ofstream outFile(filename);
     if (!outFile.is_open()) return false;
 
@@ -38,7 +40,17 @@ struct VertexList {
             << "# list of vertices" << std::endl
             << "# X Y Z R G B" << std::endl;
 
-    for (auto& p : vertices) outFile << p[0] << " " << p[1] << " " << p[2] << " 255 255 255" << std::endl;
+    for (size_t i = 0; i < vertices.size(); i++) {
+      auto& p = vertices[i];
+      outFile << p[0] << " " << p[1] << " " << p[2];
+
+      if (with_color) {
+        auto& c = colors[i];
+        outFile << " " << +c[0] << " " << +c[1] << " " << +c[2];
+      }
+
+      outFile << std::endl;
+    }
 
     outFile.close();
     return true;
