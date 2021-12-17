@@ -12,5 +12,6 @@ int main() {
   }
 
   std::cout << bunny->vertices.size() << std::endl;
+  bunny->exportToOFF("test.off");
   return 0;
 }
