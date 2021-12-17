@@ -16,23 +16,15 @@ class UniformSampler : public Sampler<T> {
   UniformSampler operator=(const UniformSampler&) = delete;
 
   typename T::Ptr sample() override {
-    PointCloudXYZ::Ptr inputCloud    = boost::make_shared<PointCloudXYZ>();
+    PointCloudXYZ::Ptr inputCloud    = this->data_->toPCL();
     PointCloudXYZ::Ptr filteredCloud = boost::make_shared<PointCloudXYZ>();
-
-    for (auto& p : this->data_->vertices) inputCloud->emplace_back(p[0], p[1], p[2]);
 
     pcl::UniformSampling<pcl::PointXYZ> filter;
     filter.setInputCloud(inputCloud);
     filter.setRadiusSearch(search_radius_);
     filter.filter(*filteredCloud);
 
-    typename T::Ptr output = std::make_shared<T>();
-    output->vertices.reserve(filteredCloud->size());
-
-    for (auto it = filteredCloud->begin(); it != filteredCloud->end(); ++it)
-      output->vertices.push_back({it->x, it->y, it->z});
-
-    return output;
+    return T::fromPCL(filteredCloud);
   }
 
  private:

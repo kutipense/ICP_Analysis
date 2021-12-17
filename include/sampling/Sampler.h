@@ -3,14 +3,14 @@
 
 #include <memory>
 
-template <typename T>
+template <typename T, typename std::enable_if<std::is_same<VertexList, T>::value, T>::type* = nullptr>
 class Sampler {
  public:
   using Ptr     = std::shared_ptr<Sampler<T>>;
   using DataPtr = typename T::Ptr;
 
   Sampler(DataPtr data_ptr) : data_(data_ptr) {}
-  virtual ~Sampler() = 0;
+  virtual ~Sampler() = default;
 
   // return new ptr
   virtual DataPtr sample() = 0;
@@ -18,8 +18,5 @@ class Sampler {
  protected:
   DataPtr data_;
 };
-
-template <typename T>
-inline Sampler<T>::~Sampler() = default;
 
 #endif
