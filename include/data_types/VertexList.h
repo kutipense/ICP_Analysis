@@ -1,12 +1,15 @@
+#ifndef __VERTEX_LIST_H__
+#define __VERTEX_LIST_H__
+
 #include <fstream>
 #include <memory>
 #include <vector>
 
-struct PlyFile {
-  using Ptr = std::shared_ptr<PlyFile>;
+struct VertexList {
+  using Ptr    = std::shared_ptr<VertexList>;
   using Vector = std::vector<std::array<double, 3>>;
 
-  PlyFile::Vector vertices;
+  VertexList::Vector vertices;
 
   bool exportToOFF(const std::string& filename) {
     std::ofstream outFile(filename);
@@ -24,3 +27,5 @@ struct PlyFile {
     return true;
   }
 };
+
+#endif

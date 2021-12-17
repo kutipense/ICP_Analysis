@@ -1,5 +1,6 @@
 BasedOnStyle: Google
 AlignConsecutiveDeclarations: 'true'
+AlignConsecutiveAssignments: 'true'
 AlignOperands: 'true'
 AllowShortBlocksOnASingleLine: 'true'
 AllowShortFunctionsOnASingleLine: All

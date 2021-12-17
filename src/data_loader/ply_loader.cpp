@@ -4,8 +4,8 @@
 
 PlyLoader::PlyLoader(const std::string& data_src) : ply_data_(data_src) {}
 
-PlyFile::Ptr PlyLoader::load() {
-  auto plyFilePtr = std::make_shared<PlyFile>();
+VertexList::Ptr PlyLoader::load() {
+  auto plyFilePtr      = std::make_shared<VertexList>();
   plyFilePtr->vertices = ply_data_.getVertexPositions("vertex");
   return plyFilePtr;
 }
