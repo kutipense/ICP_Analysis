@@ -8,6 +8,10 @@
 #include <memory>
 #include <vector>
 
+inline double sqr_dist(std::array<double, 3> p1, std::array<double, 3> p2) {
+  return std::pow(p1[0] - p2[0], 2) + std::pow(p1[1] - p2[1], 2) + std::pow(p1[2] - p2[2], 2);
+}
+
 struct VertexList {
   using Ptr           = std::shared_ptr<VertexList>;
   using Vector        = std::vector<std::array<double, 3>>;

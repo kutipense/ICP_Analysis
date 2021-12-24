@@ -4,7 +4,7 @@
 #include <sampling/Sampler.h>
 
 template <typename T>
-class CopySampler : Sampler<T> {
+class CopySampler : public Sampler<T> {
  public:
   using Ptr = std::shared_ptr<CopySampler<T>>;
 

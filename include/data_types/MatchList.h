@@ -9,14 +9,14 @@
 #include <vector>
 
 struct Match {
-	int idx;
-	float weight;
+  size_t idx;
+  float  weight;
 };
 
 struct MatchList {
-  using Ptr           = std::shared_ptr<MatchList>;
-  using Vector        = std::vector<Match>;
-  MatchList::Vector     matches;
+  using Ptr    = std::shared_ptr<MatchList>;
+  using Vector = std::vector<Match>;
+  MatchList::Vector matches;
 };
 
 #endif
