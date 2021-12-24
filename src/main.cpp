@@ -6,25 +6,27 @@
 #include <sampling/CovarianceSampler.h>
 #include <sampling/RandomSampler.h>
 #include <sampling/UniformSampler.h>
-
+#include <matching/NearestNeighborMatcher.h>
+#include <data_types/MatchList.h>
 #include <filesystem>
 #include <iostream>
 
 int main() {
   VertexList::Ptr bunny;
-  VertexList::Ptr bunnyCopied;
+  VertexList::Ptr bunny45;
   VertexList::Ptr bunnyUniformSampled;
-  VertexList::Ptr bunnyRandomSampled;
-  VertexList::Ptr bunnyCovarianceSampled;
-
+  // VertexList::Ptr bunnyCopied;
+  // VertexList::Ptr bunnyRandomSampled;
+  // VertexList::Ptr bunnyCovarianceSampled;
+  MatchList::Ptr bunniesMatch;
   {
-    PlyLoader loader("../dataset/3dscanrep/bunny/data/bun000.ply");
+    PlyLoader loader("/home/usamex/3d-scanning-and-motion-capture/ICP_Analysis/scripts/dataset/3dscanrep/bunny/data/bun000.ply");
     bunny = loader.load();
   }
 
   {
-    CopySampler<VertexList> sampler(bunny);
-    bunnyCopied = sampler.sample();
+    PlyLoader loader("/home/usamex/3d-scanning-and-motion-capture/ICP_Analysis/scripts/dataset/3dscanrep/bunny/data/bun045.ply");
+    bunny45 = loader.load();
   }
 
   {
@@ -32,36 +34,42 @@ int main() {
     bunnyUniformSampled = sampler.sample();
   }
 
+  // {
+  //   RandomSampler<VertexList> sampler(bunny, bunnyUniformSampled->vertices.size());
+  //   bunnyRandomSampled = sampler.sample();
+  // }
+
+  // {
+  //   CovarianceSampler<VertexList> sampler(bunny, bunny->vertices.size() / 5);
+  //   bunnyCovarianceSampled = sampler.sample();
+  // }
+
+  std::cout << "bunny uniform sampled vertex size: " << bunnyUniformSampled->vertices.size() << std::endl;
+  std::cout << "bunny45 vertex size:               " << bunny45->vertices.size() << std::endl;
+  // std::cout << "bunnyCopied vertex size:         " << bunnyCopied->vertices.size() << std::endl;
+  // std::cout << "bunnyRandomSampled vertex size:  " << bunnyRandomSampled->vertices.size() << std::endl;
+  // std::cout << "bunnyUniformSampled vertex size: " << bunnyUniformSampled->vertices.size() << std::endl;
+  // std::cout << "bunnyCovarianceSampled vertex size: " << bunnyCovarianceSampled->vertices.size() << std::endl;
   {
-    RandomSampler<VertexList> sampler(bunny, bunnyUniformSampled->vertices.size());
-    bunnyRandomSampled = sampler.sample();
+    NearestNeighborMatcher<MatchList> matcher(bunnyUniformSampled, bunny45);
+    bunniesMatch = matcher.match();
   }
+  std::cout << "bunniesMatch vertex size: " << bunniesMatch->matches.size() << std::endl;
 
-  {
-    CovarianceSampler<VertexList> sampler(bunny, bunny->vertices.size() / 5);
-    bunnyCovarianceSampled = sampler.sample();
-  }
+  // bunny->exportToOFF("bunny.off");
+  // bunnyCopied->exportToOFF("bunnyCopied.off");
+  // bunnyUniformSampled->exportToOFF("bunnyUniformSampled.off");
+  // bunnyRandomSampled->exportToOFF("bunnyRandomSampled.off");
+  // bunnyCovarianceSampled->exportToOFF("bunnyCovarianceSampled.off");
 
-  std::cout << "bunny vertex size:               " << bunny->vertices.size() << std::endl;
-  std::cout << "bunnyCopied vertex size:         " << bunnyCopied->vertices.size() << std::endl;
-  std::cout << "bunnyRandomSampled vertex size:  " << bunnyRandomSampled->vertices.size() << std::endl;
-  std::cout << "bunnyUniformSampled vertex size: " << bunnyUniformSampled->vertices.size() << std::endl;
-  std::cout << "bunnyCovarianceSampled vertex size: " << bunnyCovarianceSampled->vertices.size() << std::endl;
+  // VertexList::Ptr fr1;
 
-  bunny->exportToOFF("bunny.off");
-  bunnyCopied->exportToOFF("bunnyCopied.off");
-  bunnyUniformSampled->exportToOFF("bunnyUniformSampled.off");
-  bunnyRandomSampled->exportToOFF("bunnyRandomSampled.off");
-  bunnyCovarianceSampled->exportToOFF("bunnyCovarianceSampled.off");
+  // {
+  //   RgbdLoader loader("../dataset/fr1xyz/rgbd_dataset_freiburg1_xyz/");
+  //   fr1 = loader.load();
+  // }
 
-  VertexList::Ptr fr1;
-
-  {
-    RgbdLoader loader("../dataset/fr1xyz/rgbd_dataset_freiburg1_xyz/");
-    fr1 = loader.load();
-  }
-
-  fr1->exportToOFF("fr1.off", true);
+  // fr1->exportToOFF("fr1.off", true);
 
   return 0;
 }
