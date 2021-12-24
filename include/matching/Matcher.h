@@ -2,6 +2,7 @@
 #define __MATCHER_H__
 
 #include <memory>
+#include <data_types/VertexList.h>
 
 template <typename T, typename std::enable_if<std::is_same<VertexList, T>::value, T>::type* = nullptr>
 class Matcher {
