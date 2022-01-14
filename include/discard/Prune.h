@@ -1,8 +1,7 @@
-#ifndef __RANDOM_SAMPLER_H__
-#define __RANDOM_SAMPLER_H__
+#ifndef __PRUNE_H__
+#define __PRUNE_H__
 
 #include <discard/Discard.h>
-#include <pcl/filters/random_sample.h>
 
 template <typename T>
 class Prune : public Discard<T> {

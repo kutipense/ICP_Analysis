@@ -16,7 +16,7 @@ class UniformSampler : public Sampler<T> {
   UniformSampler operator=(const UniformSampler&) = delete;
 
   typename T::Ptr sample() override {
-    PointCloudXYZ::Ptr inputCloud    = this->data_->toPCL();
+    PointCloudXYZ::Ptr inputCloud    = VertexList::toPCL<pcl::PointXYZ>(this->data_->vertices);
     PointCloudXYZ::Ptr filteredCloud = boost::make_shared<PointCloudXYZ>();
 
     pcl::UniformSampling<pcl::PointXYZ> filter;

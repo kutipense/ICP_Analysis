@@ -13,17 +13,20 @@ inline double sqr_dist(std::array<double, 3> p1, std::array<double, 3> p2) {
 }
 
 struct VertexList {
-  using Ptr           = std::shared_ptr<VertexList>;
-  using Vector        = std::vector<std::array<double, 3>>;
-  using VectorByte    = std::vector<std::array<unsigned char, 4>>;
-  using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
+  using Ptr              = std::shared_ptr<VertexList>;
+  using Vector           = std::vector<std::array<double, 3>>;
+  using VectorByte       = std::vector<std::array<unsigned char, 4>>;
+  using PointCloudXYZ    = pcl::PointCloud<pcl::PointXYZ>;
+  using PointCloudNormal = pcl::PointCloud<pcl::Normal>;
 
   VertexList::Vector     vertices;
+  VertexList::Vector     normals;
   VertexList::VectorByte colors;
 
-  PointCloudXYZ::Ptr toPCL() {
-    PointCloudXYZ::Ptr cloud = boost::make_shared<PointCloudXYZ>();
-    for (auto& p : vertices) cloud->emplace_back(p[0], p[1], p[2]);
+  template <typename T>
+  static typename pcl::PointCloud<T>::Ptr toPCL(const Vector& vec) {
+    auto cloud = boost::make_shared<pcl::PointCloud<T>>();
+    for (auto& p : vec) cloud->emplace_back(p[0], p[1], p[2]);
     return cloud;
   }
 

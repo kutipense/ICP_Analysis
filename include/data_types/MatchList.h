@@ -9,8 +9,8 @@
 #include <vector>
 
 struct Match {
-  size_t idx;
-  float  weight;
+  long long int idx;
+  float         weight;
 };
 
 struct MatchList {

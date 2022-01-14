@@ -16,7 +16,7 @@ class RandomSampler : public Sampler<T> {
   RandomSampler operator=(const RandomSampler&) = delete;
 
   typename T::Ptr sample() override {
-    PointCloudXYZ::Ptr inputCloud    = this->data_->toPCL();
+    PointCloudXYZ::Ptr inputCloud    = VertexList::toPCL<pcl::PointXYZ>(this->data_->vertices);
     PointCloudXYZ::Ptr filteredCloud = boost::make_shared<PointCloudXYZ>();
 
     pcl::RandomSample<pcl::PointXYZ> filter;

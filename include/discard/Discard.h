@@ -1,5 +1,5 @@
-#ifndef __Discard_H__
-#define __Discard_H__
+#ifndef __DISCARD_H__
+#define __DISCARD_H__
 
 #include <data_types/MatchList.h>
 #include <data_types/VertexList.h>
@@ -10,7 +10,7 @@ template <typename T, typename M, typename std::enable_if<std::is_same<VertexLis
           typename std::enable_if<std::is_same<MatchList, M>::value, M>::type* = nullptr>
 class Discard {
  public:
-  using Ptr      = std::shared_ptr<Discard<T>>;
+  using Ptr      = std::shared_ptr<Discard<T, M>>;
   using DataPtr  = typename T::Ptr;
   using MatchPtr = typename M::Ptr;
 
@@ -20,7 +20,7 @@ class Discard {
   virtual ~Discard() = default;
 
   // return new ptr
-  virtual DataPtr discard() = 0;
+  virtual MatchPtr discard() = 0;
 
  protected:
   DataPtr  source_data_;

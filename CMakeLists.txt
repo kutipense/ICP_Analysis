@@ -9,6 +9,7 @@ include_directories(
     include
     lib
     ${PCL_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 link_directories(${PCL_LIBRARY_DIRS})
