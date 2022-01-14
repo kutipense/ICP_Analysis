@@ -4,12 +4,18 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <Eigen/Dense>
 #include <fstream>
 #include <memory>
 #include <vector>
 
 inline double sqr_dist(std::array<double, 3> p1, std::array<double, 3> p2) {
   return std::pow(p1[0] - p2[0], 2) + std::pow(p1[1] - p2[1], 2) + std::pow(p1[2] - p2[2], 2);
+}
+
+inline double ang_between(std::array<double, 3> p1, std::array<double, 3> p2) {
+  Eigen::Vector3f sourceNormal(p1[0], p1[1], p1[2]), targetNormal(p2[0], p2[1], p2[2]);
+  return acos(sourceNormal.dot(targetNormal) / sourceNormal.norm() / targetNormal.norm());
 }
 
 struct VertexList {

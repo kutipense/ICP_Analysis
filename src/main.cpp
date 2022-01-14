@@ -34,22 +34,22 @@ int main() {
     bunny45 = loader.load();
   }
 
-  // {
-  //   UniformSampler<VertexList> sampler(bunny, 0.001f);
-  //   bunnyUniformSampled = sampler.sample();
-  // }
+  {
+    UniformSampler<VertexList> sampler(bunny, 0.001f);
+    bunnyUniformSampled = sampler.sample();
+  }
 
   // {
   //   RandomSampler<VertexList> sampler(bunny, bunnyUniformSampled->vertices.size());
   //   bunnyRandomSampled = sampler.sample();
   // }
 
-  {
-    CovarianceSampler<VertexList> sampler(bunny, bunny->vertices.size() / 5);
-    bunnyCovarianceSampled = sampler.sample();
-    bunnyCovarianceSampled->exportToOFF("bunnyCovarianceSampled.off");
-  }
-  bunny->exportToOFF("bunnyTest2.off");
+  // {
+  //   CovarianceSampler<VertexList> sampler(bunny, bunny->vertices.size() / 5);
+  //   bunnyCovarianceSampled = sampler.sample();
+  //   // bunnyCovarianceSampled->exportToOFF("bunnyCovarianceSampled.off");
+  // }
+  // bunny->exportToOFF("bunnyTest2.off");
 
   // std::cout << "bunny uniform sampled vertex size: " << bunnyUniformSampled->vertices.size() << std::endl;
   // std::cout << "bunny45 vertex size:               " << bunny45->vertices.size() << std::endl;
@@ -57,32 +57,33 @@ int main() {
   // // std::cout << "bunnyRandomSampled vertex size:  " << bunnyRandomSampled->vertices.size() << std::endl;
   // // std::cout << "bunnyUniformSampled vertex size: " << bunnyUniformSampled->vertices.size() << std::endl;
   // // std::cout << "bunnyCovarianceSampled vertex size: " << bunnyCovarianceSampled->vertices.size() << std::endl;
-  // {
-  //   NearestNeighborMatcher<MatchList> matcher(bunnyUniformSampled, bunny45);
-  //   bunniesMatch = matcher.match();
-  // }
+  {
+    NearestNeighborMatcher<MatchList> matcher(bunnyUniformSampled, bunny45);
+    bunniesMatch = matcher.match();
+  }
 
   // std::cout << "bunniesMatch vertex size: " << bunniesMatch->matches.size() << std::endl;
 
-  // {
-  //   Reject<VertexList, MatchList> reject(bunnyUniformSampled, bunny45, bunniesMatch);
-  //   reject.setMaxDistance(0.005);
+  {
+    Reject<VertexList, MatchList> reject(bunnyUniformSampled, bunny45, bunniesMatch);
+    reject.setMaxDistance(0.005);
+    // reject.setMaxAngle(M_PI / 3);
 
-  //   auto matchesPruned = reject.discard();
+    auto matchesPruned = reject.discard();
 
-  //   VertexList::Ptr bunnyUniformSampledPruned = std::make_shared<VertexList>();
-  //   VertexList::Ptr bunny45Pruned             = std::make_shared<VertexList>();
+    VertexList::Ptr bunnyUniformSampledPruned = std::make_shared<VertexList>();
+    VertexList::Ptr bunny45Pruned             = std::make_shared<VertexList>();
 
-  //   for (size_t i = 0; i < matchesPruned->matches.size(); i++) {
-  //     if (matchesPruned->matches[i].idx < 0) continue;
-  //     bunnyUniformSampledPruned->vertices.push_back(bunnyUniformSampled->vertices[i]);
-  //     bunny45Pruned->vertices.push_back(bunny45->vertices[matchesPruned->matches[i].idx]);
-  //   }
+    for (size_t i = 0; i < matchesPruned->matches.size(); i++) {
+      if (matchesPruned->matches[i].idx < 0) continue;
+      bunnyUniformSampledPruned->vertices.push_back(bunnyUniformSampled->vertices[i]);
+      bunny45Pruned->vertices.push_back(bunny45->vertices[matchesPruned->matches[i].idx]);
+    }
 
-  //   // bunnyUniformSampledPruned->exportToOFF("bunnyUniformSampledPruned.off");
-  //   // bunny45Pruned->exportToOFF("bunny45Pruned.off");
-  //   // bunnyUniformSampled->exportToOFF("bunnyUniformSampled.off");
-  // }
+    bunnyUniformSampledPruned->exportToOFF("bunnyUniformSampledPruned.off");
+    bunny45Pruned->exportToOFF("bunny45Pruned.off");
+    // bunnyUniformSampled->exportToOFF("bunnyUniformSampled.off");
+  }
 
   // bunny->exportToOFF("bunny.off");
   // bunnyCopied->exportToOFF("bunnyCopied.off");

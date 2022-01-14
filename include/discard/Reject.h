@@ -25,12 +25,18 @@ class Reject : public Discard<T, M> {
     matches_pruned->matches.reserve(this->match_list_->matches.size());
 
     for (size_t i = 0; i < this->source_data_->vertices.size(); i++) {
-      auto& src_point    = this->source_data_->vertices[i];
-      auto& target_point = this->target_data_->vertices[this->match_list_->matches[i].idx];
-
       auto ind = this->match_list_->matches[i].idx;
-      if (dist_ && sqr_dist(src_point, target_point) > *dist_) ind = -1;
-      if (ind >= 0 && ang_) ind = -1;
+      if (ind >= 0 && dist_) {
+        auto& src_point    = this->source_data_->vertices[i];
+        auto& target_point = this->target_data_->vertices[ind];
+        if (sqr_dist(src_point, target_point) > *dist_) ind = -1;
+      }
+
+      if (ind >= 0 && ang_) {
+        auto& src_normal    = this->source_data_->normals[i];
+        auto& target_normal = this->target_data_->normals[ind];
+        if (ang_between(src_normal, target_normal) > *ang_) ind = -1;
+      }
 
       matches_pruned->matches.push_back({ind, 1.0});
     }
