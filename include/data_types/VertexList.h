@@ -44,12 +44,13 @@ struct VertexList {
     for (auto& p : vec) v.emplace_back(p[0], p[1], p[2]);
     return v;
   }
+
   template <typename T>
-  static Vector fromEigen(const T& vec) {
-    Vector v;
-    v.reserve(vec.size());
-    for (auto& p : vec) v.push_back({p[0], p[1], p[2]});
-    return v;
+  static VertexList::Ptr fromEigen(const T& vec) {
+    VertexList::Ptr vertex_list = std::make_shared<VertexList>();
+    vertex_list->vertices.reserve(vec.size());
+    for (auto& p : vec) vertex_list->vertices.push_back({p[0], p[1], p[2]});
+    return vertex_list;
   }
   static VertexList::Ptr fromPCL(PointCloudXYZ::Ptr cloud) {
     VertexList::Ptr vertex_list = std::make_shared<VertexList>();

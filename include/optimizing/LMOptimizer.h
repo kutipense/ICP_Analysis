@@ -15,16 +15,23 @@
 template <typename T, typename M, typename SamplerType, typename DiscardType, typename MatcherType>
 class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType> {
  public:
-  LMOptimizer(typename T::Ptr& source, typename T::Ptr& target,
-              ErrorMetric error_metric = ErrorMetric::PointToPoint, unsigned int m_nIterations = 20)
+  LMOptimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
+              unsigned int m_nIterations = 20)
       : Optimizer<T, M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
+
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     // m_nearestNeighborSearch->buildIndex(target.getPoints());
-    typename SamplerType::Ptr sampler = std::make_shared<SamplerType>(this->source);
-    typename T::Ptr           sampled = sampler->sample();
+    typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.001f);
+    typename T::Ptr           sampled  = sampler->sample();
+    typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.001f);
+    typename T::Ptr           sampled2 = sampler2->sample();
     typename MatcherType::Ptr matcher;
-    typename M::Ptr           matched = matcher->match();
+
+    sampled->exportToOFF("bunnySampledICP.off");
+    sampled2->exportToOFF("bunny45SampledICP.off");
+
+    // sampled->exportTo
 
     // The initial estimate can be given as an argument.
     Eigen::Matrix4f estimatedPose = initialPose;
@@ -40,10 +47,10 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
       std::cout << "Matching points ..." << std::endl;
       clock_t begin = clock();
 
-      auto transformedPoints  = this->transformPoints(this->source->vertices, estimatedPose);
-      auto _transformedNormals = this->transformNormals(this->source->normals, estimatedPose);
-      auto transformedNormals = VertexList::fromEigen(_transformedNormals);
-      matcher                 = std::make_shared<MatcherType>(sampled, transformedNormals);
+      auto transformedPoints  = this->transformPoints(sampled->vertices, estimatedPose);
+      auto transformedNormals = this->transformNormals(sampled->normals, estimatedPose);
+      auto _transformedPoints = VertexList::fromEigen(transformedPoints);
+      matcher                 = std::make_shared<MatcherType>(_transformedPoints, sampled2);
       auto matches            = matcher->match();
 
       clock_t end         = clock();
@@ -52,9 +59,9 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
       // Prepare point-to-point and point-to-plane constraints.
       ceres::Problem problem;
-      auto           vEigen = this->target->toEigen(this->target->vertices);
-      auto           nEigen = this->target->toEigen(this->target->normals);
-      prepareConstraints(transformedPoints, vEigen, _transformedNormals, nEigen, *matches, poseIncrement, problem);
+      auto           vEigen = VertexList::toEigen(sampled2->vertices);
+      auto           nEigen = VertexList::toEigen(sampled2->normals);
+      prepareConstraints(transformedPoints, vEigen, transformedNormals, nEigen, *matches, poseIncrement, problem);
 
       // Configure options for the solver.
       ceres::Solver::Options options;
@@ -91,9 +98,8 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
   void prepareConstraints(const std::vector<Vector3f>& sourcePoints, const VectorEigen3f& targetPoints,
                           const std::vector<Vector3f>& sourceNormals, const VectorEigen3f& targetNormals,
-                          const M matches, const PoseIncrement<double>& poseIncrement,
-                          ceres::Problem& problem) const {
-    const unsigned nPoints = sourcePoints.size();
+                          const M matches, const PoseIncrement<double>& poseIncrement, ceres::Problem& problem) const {
+    const unsigned nPoints = matches.matches.size();
 
     for (unsigned i = 0; i < nPoints; ++i) {
       const auto match = matches.matches[i];
@@ -108,10 +114,10 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
         if ((sourcePoint - targetPoint).squaredNorm() == 0.0) continue;
 
-        if (this->error_metric == ErrorMetric::PointToPoint)
+        if (this->error_metric == ErrorMetric::PointToPoint) {
           problem.AddResidualBlock(PointToPointConstraint::create(sourcePoint, targetPoint, 1), nullptr,
                                    poseIncrement.getData());
-        else if (this->error_metric == ErrorMetric::PointToPlane) {
+        } else if (this->error_metric == ErrorMetric::PointToPlane) {
           const auto& targetNormal = targetNormals[match.idx];
 
           if (!targetNormal.allFinite()) continue;

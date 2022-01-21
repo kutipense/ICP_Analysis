@@ -16,8 +16,8 @@ template <typename T, typename M, typename SamplerType, typename DiscardType, ty
           typename std::enable_if<std::is_same<MatchList, M>::value, M>::type*  = nullptr>
 class Optimizer {
  public:
-  Optimizer(typename T::Ptr& source, typename T::Ptr& target,
-            ErrorMetric error_metric = ErrorMetric::PointToPoint, unsigned int m_nIterations = 20)
+  Optimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
+            unsigned int m_nIterations = 20)
       : source{source}, target{target}, error_metric{error_metric}, m_nIterations{m_nIterations} {}
   virtual void optimize(Eigen::Matrix4f& initialPose) = 0;
   void         setNumOfIterations(unsigned int nIterations) { m_nIterations = nIterations; }
@@ -29,8 +29,8 @@ class Optimizer {
   std::shared_ptr<Matcher<M>>    matcher;
   std::shared_ptr<Sampler<T>>    sampler;
   ErrorMetric                    error_metric;
-  typename T::Ptr&         source;
-  typename T::Ptr&         target;
+  typename T::Ptr&               source;
+  typename T::Ptr&               target;
 
   std::vector<Eigen::Vector3f> transformPoints(const VertexList::Vector& sourcePoints, const Matrix4f& pose) {
     std::vector<Eigen::Vector3f> transformedPoints;
@@ -42,7 +42,7 @@ class Optimizer {
     for (const auto& point : sourcePoints) {
       Eigen::Vector3f _point(point[0], point[1], point[2]);
       auto const      v = rotation * _point + translation;
-      transformedPoints.emplace_back(v(0), v(1), v(2));
+      transformedPoints.emplace_back(v);
     }
 
     return transformedPoints;
@@ -59,11 +59,10 @@ class Optimizer {
     transformedNormals.reserve(sourceNormals.size());
 
     const auto rotation = pose.block(0, 0, 3, 3);
-
     for (const auto& normal : sourceNormals) {
       Eigen::Vector3f _normal(normal[0], normal[1], normal[2]);
       auto const      v = rotation.inverse().transpose() * _normal;
-      transformedNormals.emplace_back(v(0), v(1), v(2));
+      transformedNormals.emplace_back(v);
     }
 
     return transformedNormals;

@@ -45,9 +45,17 @@ int main() {
 
   {
     LMOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
-                          NearestNeighborMatcher<MatchList>>     optimizer{bunny, bunny45};
+                NearestNeighborMatcher<MatchList>>
+                    optimizer{bunny, bunny45};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
+
+    auto                           bunny45PC = VertexList::toPCL<pcl::PointXYZ>(bunny->vertices);
+    VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+
+    pcl::transformPointCloud(*bunny45PC, *out_cloud, estimatedPose);
+    auto v = VertexList::fromPCL(out_cloud);
+    v->exportToOFF("bunny45ICP.off");
   }
   // {
   //   RandomSampler<VertexList> sampler(bunny, bunnyUniformSampled->vertices.size());
