@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorEigen3f;
+
 inline double sqr_dist(std::array<double, 3> p1, std::array<double, 3> p2) {
   return std::pow(p1[0] - p2[0], 2) + std::pow(p1[1] - p2[1], 2) + std::pow(p1[2] - p2[2], 2);
 }
@@ -36,6 +38,19 @@ struct VertexList {
     return cloud;
   }
 
+  static VectorEigen3f toEigen(const Vector& vec) {
+    VectorEigen3f v;
+    v.reserve(vec.size());
+    for (auto& p : vec) v.emplace_back(p[0], p[1], p[2]);
+    return v;
+  }
+  template <typename T>
+  static Vector fromEigen(const T& vec) {
+    Vector v;
+    v.reserve(vec.size());
+    for (auto& p : vec) v.push_back({p[0], p[1], p[2]});
+    return v;
+  }
   static VertexList::Ptr fromPCL(PointCloudXYZ::Ptr cloud) {
     VertexList::Ptr vertex_list = std::make_shared<VertexList>();
     vertex_list->vertices.reserve(cloud->size());

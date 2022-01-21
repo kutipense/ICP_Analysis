@@ -2,7 +2,7 @@
 #define __ERROR_HELPERS_H__
 
 #include <ceres/ceres.h>
-
+#include <ceres/rotation.h>
 #include <Eigen/Dense>
 
 template <typename T>

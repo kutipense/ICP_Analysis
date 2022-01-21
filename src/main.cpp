@@ -5,6 +5,8 @@
 #include <external/FreeImageHelper.h>
 #include <external/VirtualSensor.h>
 #include <matching/NearestNeighborMatcher.h>
+#include <optimizing/LMOptimizer.h>
+#include <optimizing/Optimizer.h>
 #include <pcl/registration/correspondence_estimation_normal_shooting.h>
 #include <pcl/registration/correspondence_rejection_surface_normal.h>
 #include <sampling/CopySampler.h>
@@ -12,6 +14,7 @@
 #include <sampling/RandomSampler.h>
 #include <sampling/UniformSampler.h>
 
+#include <Eigen/Dense>
 #include <filesystem>
 #include <iostream>
 
@@ -23,6 +26,7 @@ int main() {
   // VertexList::Ptr bunnyRandomSampled;
   VertexList::Ptr bunnyCovarianceSampled;
   MatchList::Ptr  bunniesMatch;
+
   {
     PlyLoader loader("../dataset/3dscanrep/bunny/data/bun000.ply");
     bunny = loader.load();
@@ -39,6 +43,12 @@ int main() {
     bunnyUniformSampled = sampler.sample();
   }
 
+  {
+    LMOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
+                          NearestNeighborMatcher<MatchList>>     optimizer{bunny, bunny45};
+    Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
+    optimizer.optimize(estimatedPose);
+  }
   // {
   //   RandomSampler<VertexList> sampler(bunny, bunnyUniformSampled->vertices.size());
   //   bunnyRandomSampled = sampler.sample();
