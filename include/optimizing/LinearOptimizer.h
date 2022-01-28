@@ -47,8 +47,13 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       std::vector<Vector3f> targetPoints;
       std::vector<Vector3f> targetNormals;
 
-      auto targetPts  = VertexList::toEigen(sampled2->vertices);
-      auto targetNmls = VertexList::toEigen(sampled2->normals);
+      Eigen::Matrix4f invRotMatrix = Eigen::Matrix4f::Identity();
+      if (this->error_metric == ErrorMetric::Symmetric) {
+        invRotMatrix.block<3, 3>(0, 0) << estimatedPose.block<3, 3>(0, 0).transpose();
+      }
+
+      auto targetPts  = this->transformPoints(sampled2->vertices, invRotMatrix);
+      auto targetNmls = this->transformNormals(sampled2->normals, invRotMatrix);
 
       // Add all matches to the sourcePoints and targetPoints vector,
       // so that the sourcePoints[i] matches targetPoints[i]. For every source point,
@@ -57,8 +62,9 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
         const auto& match = matches->matches[j];
         if (match.idx >= 0) {
           sourcePoints.push_back(transformedPoints[j]);
-          targetPoints.push_back(targetPts[match.idx]);
           sourceNormals.push_back(transformedNormals[j]);
+
+          targetPoints.push_back(targetPts[match.idx]);
           targetNormals.push_back(targetNmls[match.idx]);
         }
       }
