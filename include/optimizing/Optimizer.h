@@ -62,6 +62,36 @@ class Optimizer {
 
     return transformedNormals;
   }
+
+  std::vector<Eigen::Vector3f> transformPoints(const VectorEigen3f& sourcePoints, const Eigen::Matrix4f& pose) {
+    std::vector<Eigen::Vector3f> transformedPoints;
+    transformedPoints.reserve(sourcePoints.size());
+
+    const auto rotation    = pose.block(0, 0, 3, 3);
+    const auto translation = pose.block(0, 3, 3, 1);
+
+    for (const auto& point : sourcePoints) {
+      Eigen::Vector3f _point(point[0], point[1], point[2]);
+      auto const      v = rotation * _point + translation;
+      transformedPoints.emplace_back(v);
+    }
+
+    return transformedPoints;
+  }
+
+  std::vector<Eigen::Vector3f> transformNormals(const VectorEigen3f& sourceNormals, const Eigen::Matrix4f& pose) {
+    std::vector<Eigen::Vector3f> transformedNormals;
+    transformedNormals.reserve(sourceNormals.size());
+
+    const auto rotation = pose.block(0, 0, 3, 3);
+    for (const auto& normal : sourceNormals) {
+      Eigen::Vector3f _normal(normal[0], normal[1], normal[2]);
+      auto const      v = rotation.inverse().transpose() * _normal;
+      transformedNormals.emplace_back(v);
+    }
+
+    return transformedNormals;
+  }
 };
 
 #endif
