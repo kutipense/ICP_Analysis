@@ -53,8 +53,8 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       if (this->error_metric == ErrorMetric::Symmetric) {
         Eigen::Matrix4f invRotMatrix = Eigen::Matrix4f::Identity();
         invRotMatrix.block<3, 3>(0, 0) << estimatedPose.block<3, 3>(0, 0).transpose();
-        targetPts  = this->transformPoints(targetPts, invRotMatrix);
-        targetNmls = this->transformNormals(targetNmls, invRotMatrix);
+        // targetPts = this->transformPoints(targetPts, invRotMatrix);
+        // targetNmls = this->transformNormals(targetNmls, invRotMatrix);
       }
 
       // Add all matches to the sourcePoints and targetPoints vector,

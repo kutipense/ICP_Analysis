@@ -35,9 +35,9 @@ int main() {
   }
 
   {
-    LinearOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
-                    NearestNeighborMatcher<MatchList>>
-                    optimizer{bunny, bunny45};
+    LMOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
+                NearestNeighborMatcher<MatchList>>
+                    optimizer{bunny, bunny45, ErrorMetric::Symmetric};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 
