@@ -43,9 +43,12 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
 
       std::vector<Vector3f> sourcePoints;
-      auto                  targetPts     = VertexList::toEigen(sampled2->vertices);
-      auto                  targetNormals = VertexList::toEigen(sampled2->normals);
+      std::vector<Vector3f> sourceNormals;
       std::vector<Vector3f> targetPoints;
+      std::vector<Vector3f> targetNormals;
+
+      auto targetPts  = VertexList::toEigen(sampled2->vertices);
+      auto targetNmls = VertexList::toEigen(sampled2->normals);
 
       // Add all matches to the sourcePoints and targetPoints vector,
       // so that the sourcePoints[i] matches targetPoints[i]. For every source point,
@@ -55,6 +58,8 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
         if (match.idx >= 0) {
           sourcePoints.push_back(transformedPoints[j]);
           targetPoints.push_back(targetPts[match.idx]);
+          sourceNormals.push_back(transformedNormals[j]);
+          targetNormals.push_back(targetNmls[match.idx]);
         }
       }
 
@@ -64,7 +69,7 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       } else if (this->error_metric == ErrorMetric::PointToPoint) {
         estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
       } else if (this->error_metric == ErrorMetric::Symmetric) {
-        estimatedPose = estimatePosePointToPlane(sourcePointss, targetPoints, targetNormals) * estimatedPose;
+        estimatedPose = estimateSymmetric(sourcePoints, targetPoints, sourceNormals, targetNormals) * estimatedPose;
       }
 
       std::cout << "Optimization iteration done." << std::endl;
@@ -94,6 +99,60 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       const auto& s = sourcePoints[i];
       const auto& d = targetPoints[i];
       const auto& n = targetNormals[i];
+
+      // Add the point-to-plane constraints to the system
+      A(4 * i, 0)             = n.z() * s.y() - n.y() * s.z();
+      A(4 * i, 1)             = n.x() * s.z() - n.z() * s.x();
+      A(4 * i, 2)             = n.y() * s.x() - n.x() * s.y();
+      A.block<1, 3>(4 * i, 3) = n;
+      b(4 * i)                = (d - s).dot(n);
+
+      // Add the point-to-point constraints to the system
+      A.block<3, 3>(4 * i + 1, 0) << 0.0f, s.z(), -s.y(), -s.z(), 0.0f, s.x(), s.y(), -s.x(), 0.0f;
+      A.block<3, 3>(4 * i + 1, 3).setIdentity();
+      b.segment<3>(4 * i + 1) = d - s;
+      // Optionally, apply a higher weight to point-to-plane correspondences
+      A.block<1, 6>(4 * i, 0) *= this->weight;
+      b(4 * i) *= this->weight;
+    }
+
+    // Solve the system
+    MatrixXf            ATA = A.transpose() * A;
+    VectorXf            ATb = A.transpose() * b;
+    JacobiSVD<MatrixXf> svd(ATA, ComputeFullV | ComputeFullU);
+    Eigen::VectorXf     x = svd.solve(ATb);
+
+    float alpha = x(0), beta = x(1), gamma = x(2);
+
+    // Build the pose matrix
+    Matrix3f rotation = AngleAxisf(alpha, Eigen::Vector3f::UnitX()).toRotationMatrix() *
+                        AngleAxisf(beta, Eigen::Vector3f::UnitY()).toRotationMatrix() *
+                        AngleAxisf(gamma, Eigen::Vector3f::UnitZ()).toRotationMatrix();
+
+    Eigen::Vector3f translation = x.tail(3);
+
+    // Build the pose matrix using the rotation and translation matrices
+    Matrix4f estimatedPose          = Matrix4f::Identity();
+    estimatedPose.block(0, 0, 3, 3) = rotation;
+    estimatedPose.block(0, 3, 3, 1) = translation;
+
+    return estimatedPose;
+  }
+
+  Matrix4f estimateSymmetric(const VectorEigen3f& sourcePoints, const VectorEigen3f& targetPoints,
+                             const VectorEigen3f& sourceNormals, const VectorEigen3f& targetNormals) {
+    const unsigned nPoints = sourcePoints.size();
+
+    // Build the system
+    MatrixXf A = MatrixXf::Zero(4 * nPoints, 6);
+    VectorXf b = VectorXf::Zero(4 * nPoints);
+
+    for (unsigned i = 0; i < nPoints; i++) {
+      const auto& s  = sourcePoints[i];
+      const auto& d  = targetPoints[i];
+      const auto& nT = targetNormals[i];
+      const auto& nS = sourceNormals[i];
+      const auto  n  = nT + nS;
 
       // Add the point-to-plane constraints to the system
       A(4 * i, 0)             = n.z() * s.y() - n.y() * s.z();

@@ -3,6 +3,7 @@
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
+
 #include <Eigen/Dense>
 
 template <typename T>
