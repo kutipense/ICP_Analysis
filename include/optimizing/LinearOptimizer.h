@@ -158,9 +158,14 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
     for (unsigned i = 0; i < nPoints; i++) {
       const auto& s  = sourcePoints[i];
       const auto& d  = targetPoints[i];
-      const auto& nT = targetNormals[i];
       const auto& nS = sourceNormals[i];
-      const auto  n  = nT + nS;
+      const auto& nT = targetNormals[i];
+
+      Eigen::Vector3f n;
+      if (nS.dot(nT) >= 0.0)
+        n = nS + nT;
+      else
+        n = nS - nT;
 
       // Add the point-to-plane constraints to the system
       A(4 * i, 0)             = n.z() * s.y() - n.y() * s.z();
