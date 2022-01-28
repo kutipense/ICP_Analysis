@@ -16,7 +16,7 @@ template <typename T, typename M, typename SamplerType, typename DiscardType, ty
 class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType> {
  public:
   LMOptimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
-              unsigned int m_nIterations = 20)
+              unsigned int m_nIterations = 20, const float weight = 2)
       : Optimizer<T, M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
 
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
@@ -107,12 +107,8 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
         const auto& sourcePoint = sourcePoints[i];
         const auto& targetPoint = targetPoints[match.idx];
 
-        if (!sourcePoint.allFinite() || !targetPoint.allFinite()) continue;
-
-        // TODO: Create a new point-to-point cost function and add it as constraint (i.e. residual block)
-        // to the Ceres problem.
-
-        if ((sourcePoint - targetPoint).squaredNorm() == 0.0) continue;
+        if (!sourcePoint.allFinite() || !targetPoint.allFinite() || (sourcePoint - targetPoint).squaredNorm() == 0.0)
+          continue;
 
         if (this->error_metric == ErrorMetric::PointToPoint) {
           problem.AddResidualBlock(PointToPointConstraint::create(sourcePoint, targetPoint, 1), nullptr,
@@ -122,21 +118,16 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
           if (!targetNormal.allFinite()) continue;
 
-          // TODO: Create a new point-to-plane cost function and add it as constraint (i.e. residual block)
-          // to the Ceres problem.
-          // double the weight
-          problem.AddResidualBlock(PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, 2), nullptr,
-                                   poseIncrement.getData());
+          problem.AddResidualBlock(PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, this->weight),
+                                   nullptr, poseIncrement.getData());
         } else if (this->error_metric == ErrorMetric::Symmetric) {
           const auto& targetNormal = targetNormals[match.idx];
           const auto& sourceNormal = sourceNormals[i];
           if (!targetNormal.allFinite() && !sourceNormal.allFinite()) continue;
 
-          // TODO: Create a new point-to-plane cost function and add it as constraint (i.e. residual block)
-          // to the Ceres problem.
-          // double the weight
-          problem.AddResidualBlock(SymmetricConstraint::create(sourcePoint, targetPoint, sourceNormal, targetNormal, 2),
-                                   nullptr, poseIncrement.getData());
+          problem.AddResidualBlock(
+              SymmetricConstraint::create(sourcePoint, targetPoint, sourceNormal, targetNormal, this->weight), nullptr,
+              poseIncrement.getData());
         }
       }
     }

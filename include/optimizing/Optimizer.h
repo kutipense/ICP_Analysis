@@ -17,14 +17,15 @@ template <typename T, typename M, typename SamplerType, typename DiscardType, ty
 class Optimizer {
  public:
   Optimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
-            unsigned int m_nIterations = 20)
-      : source{source}, target{target}, error_metric{error_metric}, m_nIterations{m_nIterations} {}
+            unsigned int m_nIterations = 20, const float weight = 2)
+      : source{source}, target{target}, error_metric{error_metric}, m_nIterations{m_nIterations}, weight{weight} {}
   virtual void optimize(Eigen::Matrix4f& initialPose) = 0;
   void         setNumOfIterations(unsigned int nIterations) { m_nIterations = nIterations; }
   virtual ~Optimizer() = default;
 
  protected:
   unsigned int                   m_nIterations;
+  float                          weight;
   std::shared_ptr<Discard<T, M>> discarder;
   std::shared_ptr<Matcher<M>>    matcher;
   std::shared_ptr<Sampler<T>>    sampler;
@@ -32,7 +33,7 @@ class Optimizer {
   typename T::Ptr&               source;
   typename T::Ptr&               target;
 
-  std::vector<Eigen::Vector3f> transformPoints(const VertexList::Vector& sourcePoints, const Matrix4f& pose) {
+  std::vector<Eigen::Vector3f> transformPoints(const VertexList::Vector& sourcePoints, const Eigen::Matrix4f& pose) {
     std::vector<Eigen::Vector3f> transformedPoints;
     transformedPoints.reserve(sourcePoints.size());
 
@@ -46,12 +47,6 @@ class Optimizer {
     }
 
     return transformedPoints;
-  }
-
-  void prepare() {
-    typename SamplerType::Ptr sampler = std::make_shared<SamplerType>(source);
-
-    VertexList::Ptr out = sampler.sample();
   }
 
   std::vector<Eigen::Vector3f> transformNormals(const VertexList::Vector& sourceNormals, const Eigen::Matrix4f& pose) {
