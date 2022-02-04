@@ -1,3 +1,6 @@
 [submodule "lib/happly"]
 	path = lib/happly
 	url = https://github.com/nmwsharp/happly.git
+[submodule "lib/yaml-cpp"]
+	path = lib/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
