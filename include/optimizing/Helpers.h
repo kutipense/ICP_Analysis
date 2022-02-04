@@ -36,34 +36,49 @@ class PoseIncrement {
    * Converts the pose increment with rotation in SO3 notation and translation as 3D vector into
    * transformation 4x4 matrix.
    */
-  static Matrix4f convertToMatrix(const PoseIncrement<double>& poseIncrement) {
+  template <typename D>
+  static Eigen::Matrix<D, 4, 4> convertToMatrix(const PoseIncrement<D>& poseIncrement) {
     // pose[0,1,2] is angle-axis rotation.
     // pose[3,4,5] is translation.
-    double* pose        = poseIncrement.getData();
-    double* rotation    = pose;
-    double* translation = pose + 3;
+    D* pose        = poseIncrement.getData();
+    D* rotation    = pose;
+    D* translation = pose + 3;
 
     // Convert the rotation from SO3 to matrix notation (with column-major storage).
-    double rotationMatrix[9];
+    D rotationMatrix[9];
     ceres::AngleAxisToRotationMatrix(rotation, rotationMatrix);
 
     // Create the 4x4 transformation matrix.
-    Matrix4f matrix;
+    Eigen::Matrix<D, 4, 4> matrix;
     matrix.setIdentity();
-    matrix(0, 0) = float(rotationMatrix[0]);
-    matrix(0, 1) = float(rotationMatrix[3]);
-    matrix(0, 2) = float(rotationMatrix[6]);
-    matrix(0, 3) = float(translation[0]);
-    matrix(1, 0) = float(rotationMatrix[1]);
-    matrix(1, 1) = float(rotationMatrix[4]);
-    matrix(1, 2) = float(rotationMatrix[7]);
-    matrix(1, 3) = float(translation[1]);
-    matrix(2, 0) = float(rotationMatrix[2]);
-    matrix(2, 1) = float(rotationMatrix[5]);
-    matrix(2, 2) = float(rotationMatrix[8]);
-    matrix(2, 3) = float(translation[2]);
+    matrix(0, 0) = D(rotationMatrix[0]);
+    matrix(0, 1) = D(rotationMatrix[3]);
+    matrix(0, 2) = D(rotationMatrix[6]);
+    matrix(0, 3) = D(translation[0]);
+    matrix(1, 0) = D(rotationMatrix[1]);
+    matrix(1, 1) = D(rotationMatrix[4]);
+    matrix(1, 2) = D(rotationMatrix[7]);
+    matrix(1, 3) = D(translation[1]);
+    matrix(2, 0) = D(rotationMatrix[2]);
+    matrix(2, 1) = D(rotationMatrix[5]);
+    matrix(2, 2) = D(rotationMatrix[8]);
+    matrix(2, 3) = D(translation[2]);
 
     return matrix;
+  }
+
+  template <typename D>
+  static Eigen::Matrix<D, 4, 4> convertToMatrixSymmetric(const PoseIncrement<D>& poseIncrement) {
+    D* pose = poseIncrement.getData();
+    D  quat[4];
+
+    ceres::AngleAxisToQuaternion(pose, quat);
+
+    Eigen::Quaternion<D>            q(quat[0], quat[1], quat[2], quat[3]);
+    Eigen::Translation<D, 3>        tl(pose[3], pose[4], pose[5]);
+    const Eigen::Transform<D, 3, 2> tr = q * tl * q;
+
+    return tr.matrix();
   }
 
  private:

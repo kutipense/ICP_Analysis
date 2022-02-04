@@ -18,22 +18,21 @@ class SymmetricConstraint {
 
   template <typename T>
   bool operator()(const T* const pose, T* residuals) const {
-    T inputSource[3], inputTarget[3], outputSource[3], outputTarget[3];
-    fillVector(m_sourcePoint, inputSource);
-    // fillVector(m_targetPoint, inputTarget);
+    T inSrcPoint[3], outSrcPoint[3];
+    T inDstPoint[3], outDstPoint[3];
 
-    // T inverseRotation[6] = {-pose[0], -pose[1], -pose[2], T(0), T(0), T(0)};
+    fillVector(m_sourcePoint, inSrcPoint);
+    fillVector(m_targetPoint, inDstPoint);
 
-    getPoseIncrement(const_cast<T*>(pose), inputSource, outputSource);
-    // getPoseIncrement(const_cast<T*>(inverseRotation), inputTarget, outputTarget);
+    getPoseIncrement(const_cast<T*>(pose), inSrcPoint, outSrcPoint);
 
-    auto xDiff = outputSource[0] - T(m_targetPoint(0));  // outputTarget[0];
-    auto yDiff = outputSource[1] - T(m_targetPoint(1));  // outputTarget[1];
-    auto zDiff = outputSource[2] - T(m_targetPoint(2));  // outputTarget[2];
+    T invRot[3] = {-pose[0], -pose[1], -pose[2]};
+    ceres::AngleAxisRotatePoint(invRot, inDstPoint, outDstPoint);
 
-    Eigen::Vector3f n = m_sourceNormal + m_targetNormal;
-
-    residuals[0] = (T(n[0]) * xDiff + T(n[1]) * yDiff + T(n[2]) * zDiff) * T(m_weight);
+    residuals[0] = (T(m_sourceNormal[0] + m_targetNormal[0]) * (outSrcPoint[0] - outDstPoint[0]) +
+                    T(m_sourceNormal[1] + m_targetNormal[1]) * (outSrcPoint[1] - outDstPoint[1]) +
+                    T(m_sourceNormal[2] + m_targetNormal[2]) * (outSrcPoint[2] - outDstPoint[2])) *
+                   T(m_weight);
 
     return true;
   }

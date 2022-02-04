@@ -3,12 +3,14 @@
 
 #include <ceres/ceres.h>
 #include <data_types/VertexList.h>
+#include <discard/Reject.h>
 #include <error_metrics/PointToPlane.h>
 #include <error_metrics/PointToPoint.h>
 #include <error_metrics/Symmetric.h>
 #include <matcher/Matcher.h>
 #include <optimizing/Helpers.h>
 #include <optimizing/Optimizer.h>
+#include <pcl/common/transforms.h>
 
 #include <Eigen/Dense>
 
@@ -41,17 +43,29 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
 
     clock_t begin = clock();
     for (size_t i = 0; i < this->m_nIterations; ++i) {
-      // Compute the matches.
-      // std::cout << "Matching points ..." << std::endl;
+      // if (i % 5 == 0) {
+      //   auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(sampled->vertices);
+      //   VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+      //   pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
+      //   auto v = VertexList::fromPCL(out_cloud);
+      //   v->exportToOFF("bunnyTransformed_" + std::to_string(i) + ".off");
+      // }
 
-      auto transformedPoints  = this->transformPoints(sampled->vertices, estimatedPose);
-      auto transformedNormals = this->transformNormals(sampled->normals, estimatedPose);
-      matcher                 = std::make_shared<MatcherType>(transformedPoints, sampled2->vertices);
-      auto matches            = matcher->match();
+      auto trSource      = std::make_shared<VertexList>();
+      trSource->vertices = this->transformPoints(sampled->vertices, estimatedPose);
+      trSource->normals  = this->transformNormals(sampled->normals, estimatedPose);
+
+      matcher      = std::make_shared<MatcherType>(trSource->vertices, sampled2->vertices);
+      auto matches = matcher->match();
+
+      discard::Reject::Ptr discarder = std::make_shared<discard::Reject>(trSource, sampled2, matches);
+      // discarder->setMaxAngle(0.57);
+      // discarder->setMaxDistance(0.01);
+      // matches = discarder->discard();
 
       // Prepare point-to-point and point-to-plane constraints.
       ceres::Problem problem;
-      prepareConstraints(transformedPoints, sampled2->vertices, transformedNormals, sampled2->normals, *matches,
+      prepareConstraints(trSource->vertices, sampled2->vertices, trSource->normals, sampled2->normals, *matches,
                          poseIncrement, problem);
 
       // Configure options for the solver.
@@ -65,11 +79,14 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
       // std::cout << summary.FullReport() << std::endl;
 
       // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
-      Eigen::Matrix4f matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
-      estimatedPose          = PoseIncrement<double>::convertToMatrix(poseIncrement) * estimatedPose;
-      poseIncrement.setZero();
+      Eigen::Matrix4d matrix;
+      if (this->error_metric == ErrorMetric::Symmetric)
+        matrix = PoseIncrement<double>::convertToMatrixSymmetric(poseIncrement);
+      else
+        matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
 
-      // std::cout << "Optimization iteration done." << std::endl;
+      estimatedPose = matrix.cast<float>() * estimatedPose;
+      poseIncrement.setZero();
     }
 
     clock_t end         = clock();
@@ -82,10 +99,9 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
  private:
   void configureSolver(ceres::Solver::Options& options) {
     // Ceres options.
-    options.trust_region_strategy_type   = ceres::LEVENBERG_MARQUARDT;
-    options.use_nonmonotonic_steps       = false;
-    options.linear_solver_type           = ceres::DENSE_QR;
-    options.minimizer_progress_to_stdout = 1;
+    options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+    options.use_nonmonotonic_steps     = false;
+    // options.linear_solver_type           = ceres::DENSE_QR;
     options.max_num_iterations           = 1;
     options.num_threads                  = 8;
     options.minimizer_progress_to_stdout = false;

@@ -46,7 +46,7 @@ Matrix4f Symmetric::operator()() {
 
   const Eigen::Vector6f x = M.ldlt().solve(ATb);
 
-  const float             theta = std::atan(x.norm());
+  const float             theta = std::atan(x.head(3).norm());
   const Eigen::AngleAxisf rot(theta, x.head(3).normalized());
   Eigen::Translation3f    tl(x.tail(3) * std::cos(theta));
 

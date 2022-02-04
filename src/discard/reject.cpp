@@ -1,7 +1,5 @@
 #include <discard/Reject.h>
 
-#include <optional>
-
 namespace discard {
 Reject::Reject(Discard::DataPtr source_data, Discard::DataPtr target_data, MatchPtr match_list)
     : Discard(source_data, target_data, match_list) {}

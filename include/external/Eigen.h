@@ -70,6 +70,7 @@ typedef Eigen::Matrix<float, 6, 6>  Matrix6f;
 typedef Eigen::Matrix<float, 4, 6>  Matrix4x6;
 typedef Eigen::Matrix<float, 3, 6>  Matrix3x6;
 typedef Eigen::Matrix<u_char, 4, 1> Vector4uc;
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 inline std::vector<Eigen::Vector3f> transformPoints(const std::vector<Eigen::Vector3f> &sourcePoints,
                                                     const Eigen::Matrix4f &             pose) {
