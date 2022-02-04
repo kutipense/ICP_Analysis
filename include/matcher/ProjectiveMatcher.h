@@ -1,19 +1,18 @@
 #ifndef __PROJECTIVE_MATCHER_H__
 #define __PROJECTIVE_MATCHER_H__
 
-#include <matching/Matcher.h>
+#include <matcher/Matcher.h>
 
 #include <flann/flann.hpp>
 
-template <typename T>
-class ProjectiveMatcher : public Matcher<T> {
+class ProjectiveMatcher : public Matcher {
  public:
-  using Ptr           = std::shared_ptr<ProjectiveMatcher<T>>;
+  using Ptr           = std::shared_ptr<ProjectiveMatcher>;
   using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  ProjectiveMatcher(typename T::Ptr source_data_ptr, typename T::Ptr target_data_ptr, int number_of_checks = 16,
+  ProjectiveMatcher(MatchList::Ptr source_data_ptr, MatchList::Ptr target_data_ptr, int number_of_checks = 16,
                     float max_distance = 1, int tree_size = 1)
-      : Matcher<T>(source_data_ptr, target_data_ptr),
+      : Matcher(source_data_ptr, target_data_ptr),
         num_of_checks_(number_of_checks),
         max_distance_(max_distance),
         tree_size_(tree_size) {}

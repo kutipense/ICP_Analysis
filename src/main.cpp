@@ -4,7 +4,7 @@
 #include <discard/Reject.h>
 #include <external/FreeImageHelper.h>
 #include <external/VirtualSensor.h>
-#include <matching/NearestNeighborMatcher.h>
+#include <matcher/NearestNeighborMatcher.h>
 #include <optimizing/LMOptimizer.h>
 #include <optimizing/LinearOptimizer.h>
 #include <optimizing/Optimizer.h>
@@ -34,7 +34,7 @@ int main() {
   }
 
   {
-    LinearOptimizer<MatchList, sampler::UniformSampler, discard::Reject, NearestNeighborMatcher<MatchList>> optimizer{
+    LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
         bunny, bunny45, ErrorMetric::PointToPlane, 25};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
@@ -54,7 +54,7 @@ int main() {
   }
 
   {
-    LinearOptimizer<MatchList, sampler::UniformSampler, discard::Reject, NearestNeighborMatcher<MatchList>> optimizer{
+    LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
         bunny, bunny45, ErrorMetric::Symmetric, 25};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);

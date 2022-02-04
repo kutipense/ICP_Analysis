@@ -32,6 +32,7 @@ set(LIB_FILES
   src/sampler/copy_sampler.cpp
   src/discard/reject.cpp
   src/discard/surface_normal_reject.cpp
+  src/matcher/nearest_neighbor_matcher.cpp
 )
 set(SOURCE_FILES src/main.cpp)
 

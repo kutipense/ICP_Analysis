@@ -8,13 +8,13 @@
 #include <optimizing/linear/Symmetric.h>
 #include <pcl/common/transforms.h>
 
-template <typename M, typename SamplerType, typename DiscardType, typename MatcherType>
-class LinearOptimizer : public Optimizer<M, SamplerType, DiscardType, MatcherType> {
+template <typename SamplerType, typename DiscardType, typename MatcherType>
+class LinearOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
  public:
   LinearOptimizer(VertexList::Ptr& source, VertexList::Ptr& target,
                   ErrorMetric error_metric = ErrorMetric::PointToPoint, unsigned int m_nIterations = 20,
                   const float weight = 2)
-      : Optimizer<M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations, weight) {}
+      : Optimizer<SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations, weight) {}
 
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
     typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.002f);

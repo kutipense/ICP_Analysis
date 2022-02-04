@@ -6,18 +6,18 @@
 #include <error_metrics/PointToPlane.h>
 #include <error_metrics/PointToPoint.h>
 #include <error_metrics/Symmetric.h>
-#include <matching/Matcher.h>
+#include <matcher/Matcher.h>
 #include <optimizing/Helpers.h>
 #include <optimizing/Optimizer.h>
 
 #include <Eigen/Dense>
 
-template <typename M, typename SamplerType, typename DiscardType, typename MatcherType>
-class LMOptimizer : public Optimizer<M, SamplerType, DiscardType, MatcherType> {
+template <typename SamplerType, typename DiscardType, typename MatcherType>
+class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
  public:
   LMOptimizer(VertexList::Ptr source, VertexList::Ptr target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
               unsigned int m_nIterations = 20, const float weight = 2)
-      : Optimizer<M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
+      : Optimizer<SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
 
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
@@ -96,7 +96,8 @@ class LMOptimizer : public Optimizer<M, SamplerType, DiscardType, MatcherType> {
 
   void prepareConstraints(const VertexList::Vector& sourcePoints, const VertexList::Vector& targetPoints,
                           const VertexList::Vector& sourceNormals, const VertexList::Vector& targetNormals,
-                          const M matches, const PoseIncrement<double>& poseIncrement, ceres::Problem& problem) const {
+                          const MatchList& matches, const PoseIncrement<double>& poseIncrement,
+                          ceres::Problem& problem) const {
     const unsigned nPoints = matches.matches.size();
 
     for (unsigned i = 0; i < nPoints; ++i) {

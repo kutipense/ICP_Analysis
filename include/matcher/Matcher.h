@@ -6,13 +6,13 @@
 
 #include <memory>
 
-template <typename T, typename std::enable_if<std::is_same<MatchList, T>::value, T>::type* = nullptr>
+namespace matcher {
 class Matcher {
  public:
-  using Ptr      = std::shared_ptr<Matcher<T>>;
+  using Ptr      = std::shared_ptr<Matcher>;
   using DataType = VertexList;
   using DataPtr  = VertexList::Ptr;
-  using OutPtr   = typename T::Ptr;
+  using OutPtr   = MatchList::Ptr;
 
   Matcher(const DataType::Vector& source_data, const DataType::Vector& target_data)
       : source_data_(source_data), target_data_(target_data) {}
@@ -25,5 +25,6 @@ class Matcher {
   const DataType::Vector& source_data_;
   const DataType::Vector& target_data_;
 };
+}  // namespace matcher
 
 #endif

@@ -3,7 +3,7 @@
 #include <data_types/MatchList.h>
 #include <data_types/VertexList.h>
 #include <discard/Discard.h>
-#include <matching/Matcher.h>
+#include <matcher/Matcher.h>
 #include <sampler/Sampler.h>
 
 #include <Eigen/Dense>
@@ -11,8 +11,7 @@
 
 enum class ErrorMetric { PointToPoint, PointToPlane, Symmetric };
 
-template <typename M, typename SamplerType, typename DiscardType, typename MatcherType,
-          typename std::enable_if<std::is_same<MatchList, M>::value, M>::type* = nullptr>
+template <typename SamplerType, typename DiscardType, typename MatcherType>
 class Optimizer {
  public:
   using DataType = VertexList;
@@ -29,7 +28,7 @@ class Optimizer {
   unsigned int                      m_nIterations;
   float                             weight;
   std::shared_ptr<discard::Discard> discarder;
-  std::shared_ptr<Matcher<M>>       matcher;
+  std::shared_ptr<matcher::Matcher> matcher;
   std::shared_ptr<sampler::Sampler> sampler;
   ErrorMetric                       error_metric;
   DataPtr                           source;
