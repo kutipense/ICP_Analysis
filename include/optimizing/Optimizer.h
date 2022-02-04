@@ -35,33 +35,11 @@ class Optimizer {
   DataPtr                           target;
 
   DataType::Vector transformPoints(const DataType::Vector& sourcePoints, const Eigen::Matrix4f& pose) {
-    DataType::Vector transformedPoints;
-    transformedPoints.reserve(sourcePoints.size());
-
-    const auto rotation    = pose.block(0, 0, 3, 3);
-    const auto translation = pose.block(0, 3, 3, 1);
-
-    for (const auto& point : sourcePoints) {
-      Eigen::Vector3f _point(point[0], point[1], point[2]);
-      auto const      v = rotation * _point + translation;
-      transformedPoints.emplace_back(v);
-    }
-
-    return transformedPoints;
+    return Eigen::transformPoints(sourcePoints, pose);
   }
 
   DataType::Vector transformNormals(const DataType::Vector& sourceNormals, const Eigen::Matrix4f& pose) {
-    DataType::Vector transformedNormals;
-    transformedNormals.reserve(sourceNormals.size());
-
-    const auto rotation = pose.block(0, 0, 3, 3);
-    for (const auto& normal : sourceNormals) {
-      Eigen::Vector3f _normal(normal[0], normal[1], normal[2]);
-      auto const      v = rotation.inverse().transpose() * _normal;
-      transformedNormals.emplace_back(v);
-    }
-
-    return transformedNormals;
+    return Eigen::transformNormals(sourceNormals, pose);
   }
 };
 

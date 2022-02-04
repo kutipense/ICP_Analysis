@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __EIGEN_EXTERNAL_H__
+#define __EIGEN_EXTERNAL_H__
 
 #ifndef VERBOSE
 //#define VERBOSE(msg) {std::cout << msg << std::endl;}
@@ -69,6 +70,38 @@ typedef Eigen::Matrix<float, 6, 6>  Matrix6f;
 typedef Eigen::Matrix<float, 4, 6>  Matrix4x6;
 typedef Eigen::Matrix<float, 3, 6>  Matrix3x6;
 typedef Eigen::Matrix<u_char, 4, 1> Vector4uc;
+
+inline std::vector<Eigen::Vector3f> transformPoints(const std::vector<Eigen::Vector3f> &sourcePoints,
+                                                    const Eigen::Matrix4f &             pose) {
+  std::vector<Eigen::Vector3f> transformedPoints;
+  transformedPoints.reserve(sourcePoints.size());
+
+  const auto rotation    = pose.block(0, 0, 3, 3);
+  const auto translation = pose.block(0, 3, 3, 1);
+
+  for (const auto &point : sourcePoints) {
+    Eigen::Vector3f _point(point[0], point[1], point[2]);
+    auto const      v = rotation * _point + translation;
+    transformedPoints.emplace_back(v);
+  }
+
+  return transformedPoints;
+}
+
+inline std::vector<Eigen::Vector3f> transformNormals(const std::vector<Eigen::Vector3f> &sourceNormals,
+                                                     const Eigen::Matrix4f &             pose) {
+  std::vector<Eigen::Vector3f> transformedNormals;
+  transformedNormals.reserve(sourceNormals.size());
+
+  const auto rotation = pose.block(0, 0, 3, 3);
+  for (const auto &normal : sourceNormals) {
+    Eigen::Vector3f _normal(normal[0], normal[1], normal[2]);
+    auto const      v = rotation.inverse().transpose() * _normal;
+    transformedNormals.emplace_back(v);
+  }
+
+  return transformedNormals;
+}
 }  // namespace Eigen
 
 using namespace Eigen;
@@ -103,3 +136,5 @@ std::ostream &operator<<(std::ostream &out, const Eigen::Quaternion<T> &other) {
   out << other.x() << "\t" << other.y() << "\t" << other.z() << "\t" << other.w();
   return out;
 }
+
+#endif

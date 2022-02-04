@@ -22,16 +22,13 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     // m_nearestNeighborSearch->buildIndex(target.getPoints());
-    typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.001f);
+    typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.002f);
     VertexList::Ptr           sampled  = sampler->sample();
-    typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.001f);
+    typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.002f);
     VertexList::Ptr           sampled2 = sampler2->sample();
     typename MatcherType::Ptr matcher;
 
-    sampled->exportToOFF("bunnySampledICP.off");
-    sampled2->exportToOFF("bunny45SampledICP.off");
-
-    // sampled->exportTo
+    std::cout << sampled->vertices.size() << " " << sampled2->vertices.size() << std::endl;
 
     // The initial estimate can be given as an argument.
     Eigen::Matrix4f estimatedPose = initialPose;
@@ -42,19 +39,15 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
     auto   poseIncrement = PoseIncrement<double>(incrementArray);
     poseIncrement.setZero();
 
+    clock_t begin = clock();
     for (size_t i = 0; i < this->m_nIterations; ++i) {
       // Compute the matches.
-      std::cout << "Matching points ..." << std::endl;
-      clock_t begin = clock();
+      // std::cout << "Matching points ..." << std::endl;
 
       auto transformedPoints  = this->transformPoints(sampled->vertices, estimatedPose);
       auto transformedNormals = this->transformNormals(sampled->normals, estimatedPose);
-      matcher                 = std::make_shared<MatcherType>(transformedPoints, sampled2);
+      matcher                 = std::make_shared<MatcherType>(transformedPoints, sampled2->vertices);
       auto matches            = matcher->match();
-
-      clock_t end         = clock();
-      double  elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
-      std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
 
       // Prepare point-to-point and point-to-plane constraints.
       ceres::Problem problem;
@@ -68,7 +61,7 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
       // Run the solver (for one iteration).
       ceres::Solver::Summary summary;
       ceres::Solve(options, &problem, &summary);
-      std::cout << summary.BriefReport() << std::endl;
+      // std::cout << summary.BriefReport() << std::endl;
       // std::cout << summary.FullReport() << std::endl;
 
       // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
@@ -76,9 +69,12 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
       estimatedPose          = PoseIncrement<double>::convertToMatrix(poseIncrement) * estimatedPose;
       poseIncrement.setZero();
 
-      std::cout << "Optimization iteration done." << std::endl;
+      // std::cout << "Optimization iteration done." << std::endl;
     }
 
+    clock_t end         = clock();
+    double  elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
+    std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
     // Store result
     initialPose = estimatedPose;
   }
@@ -92,6 +88,7 @@ class LMOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> {
     options.minimizer_progress_to_stdout = 1;
     options.max_num_iterations           = 1;
     options.num_threads                  = 8;
+    options.minimizer_progress_to_stdout = false;
   }
 
   void prepareConstraints(const VertexList::Vector& sourcePoints, const VertexList::Vector& targetPoints,

@@ -31,13 +31,7 @@ class SymmetricConstraint {
     auto yDiff = outputSource[1] - T(m_targetPoint(1));  // outputTarget[1];
     auto zDiff = outputSource[2] - T(m_targetPoint(2));  // outputTarget[2];
 
-    Eigen::Vector3f n;
-    if (m_sourceNormal.dot(m_targetNormal) >= 0.0)
-      n = m_sourceNormal + m_targetNormal;
-    else
-      n = m_sourceNormal - m_targetNormal;
-
-    n = m_targetNormal;
+    Eigen::Vector3f n = m_sourceNormal + m_targetNormal;
 
     residuals[0] = (T(n[0]) * xDiff + T(n[1]) * yDiff + T(n[2]) * zDiff) * T(m_weight);
 

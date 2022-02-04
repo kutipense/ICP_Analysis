@@ -25,27 +25,7 @@ class LinearOptimizer : public Optimizer<SamplerType, DiscardType, MatcherType> 
 
     auto sourcePC = VertexList::toPCL<pcl::PointXYZ>(this->source->vertices);
 
-    // std::cout << sampled->vertices.size() << std::endl;
-
-    // sampled->exportToOFF("bunnySampledICP.off");
-    // sampled2->exportToOFF("bunny45SampledICP.off");
-
-    // The initial estimate can be given as an argument.
-
-    Eigen::AngleAxisd rollAngle(0.5, Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd yawAngle(0.2, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd pitchAngle(-0.5, Eigen::Vector3d::UnitX());
-
-    Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
-
-    Eigen::Matrix3d rotationMatrix = q.matrix();
-    Eigen::Matrix4f fakeTr         = Eigen::Matrix4f::Identity();
-    fakeTr.block(0, 0, 3, 3)       = rotationMatrix.cast<float>();
-    fakeTr.block(0, 3, 3, 1)       = Eigen::Vector3f(0.0, .0, -0.0);
-
-    sampled2->vertices = this->transformPoints(sampled->vertices, fakeTr);
-    sampled2->normals  = this->transformNormals(sampled->normals, fakeTr);
-    sampled2->exportToOFF("bunnyFake.off");
+    std::cout << sampled->vertices.size() << " " << sampled2->vertices.size() << std::endl;
 
     Eigen::Matrix4f estimatedPose = initialPose;
 

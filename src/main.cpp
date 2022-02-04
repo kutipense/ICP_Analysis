@@ -18,28 +18,40 @@
 #include <iostream>
 
 int main() {
-  VertexList::Ptr bunny;
-  VertexList::Ptr bunny45;
+  VertexList::Ptr bunnySrc;
+  VertexList::Ptr bunnyDst;
 
   {
     PlyLoader loader("../dataset/3dscanrep/bunny/data/bun000.ply");
-    bunny = loader.load();
-    bunny->exportToOFF("bunnyTest.off");
+    bunnySrc = loader.load();
+    bunnySrc->exportToOFF("bunnySrc.off");
   }
 
   {
-    PlyLoader loader("../dataset/3dscanrep/bunny/data/bun090.ply");
-    bunny45 = loader.load();
-    bunny45->exportToOFF("bunny90.off");
+    bunnyDst = std::make_shared<VertexList>();
+    Eigen::AngleAxisd rot_z(1.5707963267948966, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd rot_y(0., Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rot_x(0., Eigen::Vector3d::UnitX());
+
+    Eigen::Quaternion<double> q = rot_z * rot_y * rot_x;
+
+    Eigen::Matrix3d rotationMatrix = q.matrix();
+    Eigen::Matrix4f fakeTr         = Eigen::Matrix4f::Identity();
+    fakeTr.block(0, 0, 3, 3)       = rotationMatrix.cast<float>();
+    fakeTr.block(0, 3, 3, 1)       = Eigen::Vector3f(0.0, .0, 0.0);
+
+    bunnyDst->vertices = Eigen::transformPoints(bunnySrc->vertices, fakeTr);
+    bunnyDst->normals  = Eigen::transformNormals(bunnySrc->normals, fakeTr);
+    bunnyDst->exportToOFF("bunnyDst.off");
   }
 
   {
     LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
-        bunny, bunny45, ErrorMetric::PointToPlane, 25};
+        bunnySrc, bunnyDst, ErrorMetric::PointToPlane, 100};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 
-    auto                           bunny45PC = VertexList::toPCL<pcl::PointXYZ>(bunny->vertices);
+    auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(bunnySrc->vertices);
     VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
 
     Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
@@ -48,18 +60,18 @@ int main() {
     std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
     std::cout << estimatedPose << std::endl;
 
-    pcl::transformPointCloud(*bunny45PC, *out_cloud, estimatedPose);
+    pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
     auto v = VertexList::fromPCL(out_cloud);
     v->exportToOFF("bunnyTransformed.off");
   }
 
   {
     LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
-        bunny, bunny45, ErrorMetric::Symmetric, 25};
+        bunnySrc, bunnyDst, ErrorMetric::Symmetric, 100};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 
-    auto                           bunny45PC = VertexList::toPCL<pcl::PointXYZ>(bunny->vertices);
+    auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(bunnySrc->vertices);
     VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
 
     Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
@@ -68,7 +80,7 @@ int main() {
     std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
     std::cout << estimatedPose << std::endl;
 
-    pcl::transformPointCloud(*bunny45PC, *out_cloud, estimatedPose);
+    pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
     auto v = VertexList::fromPCL(out_cloud);
     v->exportToOFF("bunnyTransformedsym.off");
   }
