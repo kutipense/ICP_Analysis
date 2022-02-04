@@ -11,9 +11,9 @@ class NearestNeighborMatcher : public Matcher<T> {
   using Ptr           = std::shared_ptr<NearestNeighborMatcher<T>>;
   using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  NearestNeighborMatcher(typename VertexList::Ptr source_data_ptr, typename VertexList::Ptr target_data_ptr,
+  NearestNeighborMatcher(const VertexList::Vector& source_data, const VertexList::Vector& target_data,
                          int number_of_checks = 16, float max_distance = 1, int tree_size = 1)
-      : Matcher<T>(source_data_ptr, target_data_ptr),
+      : Matcher<T>(source_data, target_data),
         num_of_checks_(number_of_checks),
         max_distance_(max_distance),
         tree_size_(tree_size) {}
@@ -25,28 +25,24 @@ class NearestNeighborMatcher : public Matcher<T> {
     auto matchPtr = std::make_shared<MatchList>();
 
     // FLANN requires that all the points be flat. Therefore we copy the points to a separate flat array.
-    float* m_flatPoints = new float[this->target_data_->vertices.size() * 3];
-    for (size_t pointIndex = 0; pointIndex < this->target_data_->vertices.size(); pointIndex++) {
-      for (size_t dim = 0; dim < 3; dim++) {
-        m_flatPoints[pointIndex * 3 + dim] = this->target_data_->vertices[pointIndex][dim];
-      }
+    float* m_flatPoints = new float[this->target_data_.size() * 3];
+    for (size_t pointIndex = 0; pointIndex < this->target_data_.size(); pointIndex++) {
+      for (size_t dim = 0; dim < 3; dim++) { m_flatPoints[pointIndex * 3 + dim] = this->target_data_[pointIndex][dim]; }
     }
 
-    flann::Matrix<float> dataset(m_flatPoints, this->target_data_->vertices.size(), 3);
+    flann::Matrix<float> dataset(m_flatPoints, this->target_data_.size(), 3);
 
     // Building the index takes some time.
     flann::Index<flann::L2<float>>* m_index =
         new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(tree_size_));
     m_index->buildIndex();
 
-    float* queryPoints = new float[this->source_data_->vertices.size() * 3];
-    for (size_t pointIndex = 0; pointIndex < this->source_data_->vertices.size(); pointIndex++) {
-      for (size_t dim = 0; dim < 3; dim++) {
-        queryPoints[pointIndex * 3 + dim] = this->source_data_->vertices[pointIndex][dim];
-      }
+    float* queryPoints = new float[this->source_data_.size() * 3];
+    for (size_t pointIndex = 0; pointIndex < this->source_data_.size(); pointIndex++) {
+      for (size_t dim = 0; dim < 3; dim++) { queryPoints[pointIndex * 3 + dim] = this->source_data_[pointIndex][dim]; }
     }
 
-    flann::Matrix<float>  query(queryPoints, this->source_data_->vertices.size(), 3);
+    flann::Matrix<float>  query(queryPoints, this->source_data_.size(), 3);
     flann::Matrix<size_t> indices(new size_t[query.rows * 1], query.rows, 1);
     flann::Matrix<float>  distances(new float[query.rows * 1], query.rows, 1);
 
@@ -55,7 +51,7 @@ class NearestNeighborMatcher : public Matcher<T> {
     m_index->knnSearch(query, indices, distances, 1, searchParams);
 
     // Filter the matches.
-    const unsigned nMatches = this->source_data_->vertices.size();
+    const unsigned nMatches = this->source_data_.size();
     matchPtr->matches.reserve(nMatches);
 
     for (int i = 0; i < nMatches; ++i) {

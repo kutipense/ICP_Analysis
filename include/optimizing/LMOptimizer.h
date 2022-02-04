@@ -12,20 +12,20 @@
 
 #include <Eigen/Dense>
 
-template <typename T, typename M, typename SamplerType, typename DiscardType, typename MatcherType>
-class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType> {
+template <typename M, typename SamplerType, typename DiscardType, typename MatcherType>
+class LMOptimizer : public Optimizer<M, SamplerType, DiscardType, MatcherType> {
  public:
-  LMOptimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
+  LMOptimizer(VertexList::Ptr source, VertexList::Ptr target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
               unsigned int m_nIterations = 20, const float weight = 2)
-      : Optimizer<T, M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
+      : Optimizer<M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations) {}
 
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     // m_nearestNeighborSearch->buildIndex(target.getPoints());
     typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.001f);
-    typename T::Ptr           sampled  = sampler->sample();
+    VertexList::Ptr           sampled  = sampler->sample();
     typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.001f);
-    typename T::Ptr           sampled2 = sampler2->sample();
+    VertexList::Ptr           sampled2 = sampler2->sample();
     typename MatcherType::Ptr matcher;
 
     sampled->exportToOFF("bunnySampledICP.off");
@@ -49,8 +49,7 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
       auto transformedPoints  = this->transformPoints(sampled->vertices, estimatedPose);
       auto transformedNormals = this->transformNormals(sampled->normals, estimatedPose);
-      auto _transformedPoints = VertexList::fromEigen(transformedPoints);
-      matcher                 = std::make_shared<MatcherType>(_transformedPoints, sampled2);
+      matcher                 = std::make_shared<MatcherType>(transformedPoints, sampled2);
       auto matches            = matcher->match();
 
       clock_t end         = clock();
@@ -59,9 +58,8 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
 
       // Prepare point-to-point and point-to-plane constraints.
       ceres::Problem problem;
-      auto           vEigen = VertexList::toEigen(sampled2->vertices);
-      auto           nEigen = VertexList::toEigen(sampled2->normals);
-      prepareConstraints(transformedPoints, vEigen, transformedNormals, nEigen, *matches, poseIncrement, problem);
+      prepareConstraints(transformedPoints, sampled2->vertices, transformedNormals, sampled2->normals, *matches,
+                         poseIncrement, problem);
 
       // Configure options for the solver.
       ceres::Solver::Options options;
@@ -96,8 +94,8 @@ class LMOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType
     options.num_threads                  = 8;
   }
 
-  void prepareConstraints(const std::vector<Vector3f>& sourcePoints, const VectorEigen3f& targetPoints,
-                          const std::vector<Vector3f>& sourceNormals, const VectorEigen3f& targetNormals,
+  void prepareConstraints(const VertexList::Vector& sourcePoints, const VertexList::Vector& targetPoints,
+                          const VertexList::Vector& sourceNormals, const VertexList::Vector& targetNormals,
                           const M matches, const PoseIncrement<double>& poseIncrement, ceres::Problem& problem) const {
     const unsigned nPoints = matches.matches.size();
 

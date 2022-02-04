@@ -4,19 +4,21 @@
 #include <data_types/VertexList.h>
 #include <discard/Discard.h>
 #include <matching/Matcher.h>
-#include <sampling/Sampler.h>
+#include <sampler/Sampler.h>
 
 #include <Eigen/Dense>
 #include <memory>
 
 enum class ErrorMetric { PointToPoint, PointToPlane, Symmetric };
 
-template <typename T, typename M, typename SamplerType, typename DiscardType, typename MatcherType,
-          typename std::enable_if<std::is_same<VertexList, T>::value, T>::type* = nullptr,
-          typename std::enable_if<std::is_same<MatchList, M>::value, M>::type*  = nullptr>
+template <typename M, typename SamplerType, typename DiscardType, typename MatcherType,
+          typename std::enable_if<std::is_same<MatchList, M>::value, M>::type* = nullptr>
 class Optimizer {
  public:
-  Optimizer(typename T::Ptr& source, typename T::Ptr& target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
+  using DataType = VertexList;
+  using DataPtr  = VertexList::Ptr;
+
+  Optimizer(DataPtr source, DataPtr target, ErrorMetric error_metric = ErrorMetric::PointToPoint,
             unsigned int m_nIterations = 20, const float weight = 2)
       : source{source}, target{target}, error_metric{error_metric}, m_nIterations{m_nIterations}, weight{weight} {}
   virtual void optimize(Eigen::Matrix4f& initialPose) = 0;
@@ -24,17 +26,17 @@ class Optimizer {
   virtual ~Optimizer() = default;
 
  protected:
-  unsigned int                   m_nIterations;
-  float                          weight;
-  std::shared_ptr<Discard<T, M>> discarder;
-  std::shared_ptr<Matcher<M>>    matcher;
-  std::shared_ptr<Sampler<T>>    sampler;
-  ErrorMetric                    error_metric;
-  typename T::Ptr&               source;
-  typename T::Ptr&               target;
+  unsigned int                      m_nIterations;
+  float                             weight;
+  std::shared_ptr<discard::Discard> discarder;
+  std::shared_ptr<Matcher<M>>       matcher;
+  std::shared_ptr<sampler::Sampler> sampler;
+  ErrorMetric                       error_metric;
+  DataPtr                           source;
+  DataPtr                           target;
 
-  std::vector<Eigen::Vector3f> transformPoints(const VertexList::Vector& sourcePoints, const Eigen::Matrix4f& pose) {
-    std::vector<Eigen::Vector3f> transformedPoints;
+  DataType::Vector transformPoints(const DataType::Vector& sourcePoints, const Eigen::Matrix4f& pose) {
+    DataType::Vector transformedPoints;
     transformedPoints.reserve(sourcePoints.size());
 
     const auto rotation    = pose.block(0, 0, 3, 3);
@@ -49,38 +51,8 @@ class Optimizer {
     return transformedPoints;
   }
 
-  std::vector<Eigen::Vector3f> transformNormals(const VertexList::Vector& sourceNormals, const Eigen::Matrix4f& pose) {
-    std::vector<Eigen::Vector3f> transformedNormals;
-    transformedNormals.reserve(sourceNormals.size());
-
-    const auto rotation = pose.block(0, 0, 3, 3);
-    for (const auto& normal : sourceNormals) {
-      Eigen::Vector3f _normal(normal[0], normal[1], normal[2]);
-      auto const      v = rotation.inverse().transpose() * _normal;
-      transformedNormals.emplace_back(v);
-    }
-
-    return transformedNormals;
-  }
-
-  VectorEigen3f transformPoints(const VectorEigen3f& sourcePoints, const Eigen::Matrix4f& pose) {
-    VectorEigen3f transformedPoints;
-    transformedPoints.reserve(sourcePoints.size());
-
-    const auto rotation    = pose.block(0, 0, 3, 3);
-    const auto translation = pose.block(0, 3, 3, 1);
-
-    for (const auto& point : sourcePoints) {
-      Eigen::Vector3f _point(point[0], point[1], point[2]);
-      auto const      v = rotation * _point + translation;
-      transformedPoints.emplace_back(v);
-    }
-
-    return transformedPoints;
-  }
-
-  VectorEigen3f transformNormals(const VectorEigen3f& sourceNormals, const Eigen::Matrix4f& pose) {
-    VectorEigen3f transformedNormals;
+  DataType::Vector transformNormals(const DataType::Vector& sourceNormals, const Eigen::Matrix4f& pose) {
+    DataType::Vector transformedNormals;
     transformedNormals.reserve(sourceNormals.size());
 
     const auto rotation = pose.block(0, 0, 3, 3);

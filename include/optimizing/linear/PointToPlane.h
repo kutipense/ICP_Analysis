@@ -4,12 +4,10 @@
 #include <external/Eigen.h>
 
 namespace linear {
-
-struct PointToPlaneLinear {
+struct PointToPlane {
   typedef const std::vector<Eigen::Vector3f>& VVector3fConstRef;
 
-  PointToPlaneLinear(const VVector3fConstRef sPoints, const VVector3fConstRef tPoints,
-                     const VVector3fConstRef tNormals);
+  PointToPlane(const VVector3fConstRef sPoints, const VVector3fConstRef tPoints, const VVector3fConstRef tNormals);
 
   Eigen::Matrix4f operator()();
 

@@ -11,8 +11,12 @@
 PlyLoader::PlyLoader(const std::string& data_src) : ply_data_(data_src) {}
 
 VertexList::Ptr PlyLoader::load() {
-  auto plyFilePtr      = std::make_shared<VertexList>();
-  plyFilePtr->vertices = ply_data_.getVertexPositions("vertex");
+  auto plyFilePtr = std::make_shared<VertexList>();
+
+  {
+    auto _v = ply_data_.getVertexPositions("vertex");
+    for (size_t i = 0; i < _v.size(); i++) plyFilePtr->vertices.emplace_back(_v[i][0], _v[i][1], _v[i][2]);
+  }
 
   std::unordered_map<std::string, std::string> params;
   for (size_t i = 0; i < ply_data_.objInfoComments.size(); i++) {
@@ -22,26 +26,29 @@ VertexList::Ptr PlyLoader::load() {
     if (splitted.size() == 2) params[splitted[0]] = splitted[1];
   }
 
-  auto gridRaw = ply_data_.getElement("range_grid").getListPropertyAnySign<size_t>("vertex_indices");
-
   std::vector<double>          gridParsed;
   std::vector<Eigen::Vector3f> gridVector;
+  int                          height, width;
 
-  gridParsed.resize(gridRaw.size());
-  gridVector.reserve(gridRaw.size());
+  {
+    auto gridRaw = ply_data_.getElement("range_grid").getListPropertyAnySign<size_t>("vertex_indices");
 
-  auto height = std::stoi(params["num_rows"]);
-  auto width  = std::stoi(params["num_cols"]);
+    gridParsed.resize(gridRaw.size());
+    gridVector.reserve(gridRaw.size());
 
-  for (size_t i = 0; i < gridRaw.size(); i++) {
-    if (gridRaw[i].size() == 0) {
-      gridParsed[i] = std::numeric_limits<double>::infinity();
-      gridVector.push_back(Eigen::Vector3f(0, 0, 0));
-    } else {
-      auto  vectorIdx = gridRaw[i][0];
-      auto& v         = plyFilePtr->vertices[vectorIdx];
-      gridParsed[i]   = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-      gridVector.push_back(Eigen::Vector3f(v[0], v[1], v[2]));
+    height = std::stoi(params["num_rows"]);
+    width  = std::stoi(params["num_cols"]);
+
+    for (size_t i = 0; i < gridRaw.size(); i++) {
+      if (gridRaw[i].size() == 0) {
+        gridParsed[i] = std::numeric_limits<double>::infinity();
+        gridVector.push_back(Eigen::Vector3f(0, 0, 0));
+      } else {
+        auto  vectorIdx = gridRaw[i][0];
+        auto& v         = plyFilePtr->vertices[vectorIdx];
+        gridParsed[i]   = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+        gridVector.push_back(Eigen::Vector3f(v[0], v[1], v[2]));
+      }
     }
   }
 
@@ -56,14 +63,14 @@ VertexList::Ptr PlyLoader::load() {
 
       if (!std::isfinite(gridParsed[idx + 1]) || !std::isfinite(gridParsed[idx - 1]) ||
           !std::isfinite(gridParsed[idx + width]) || !std::isfinite(gridParsed[idx - width])) {
-        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.push_back({0, 0, 0});
+        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
         continue;
       }
 
       const float du = 0.5f * (gridParsed[idx + 1] - gridParsed[idx - 1]);
       const float dv = 0.5f * (gridParsed[idx + width] - gridParsed[idx - width]);
       if (!std::isfinite(du) || !std::isfinite(dv) || abs(du) > maxDistanceHalved || abs(dv) > maxDistanceHalved) {
-        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.push_back({0, 0, 0});
+        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
         continue;
       }
 
@@ -72,7 +79,7 @@ VertexList::Ptr PlyLoader::load() {
 
       auto n = pU.cross(pV);
       n.normalize();
-      plyFilePtr->normals.push_back({n(0), n(1), n(2)});
+      plyFilePtr->normals.emplace_back(n(0), n(1), n(2));
     }
   }
 

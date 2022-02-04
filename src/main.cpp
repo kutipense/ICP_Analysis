@@ -8,12 +8,10 @@
 #include <optimizing/LMOptimizer.h>
 #include <optimizing/LinearOptimizer.h>
 #include <optimizing/Optimizer.h>
-#include <pcl/registration/correspondence_estimation_normal_shooting.h>
-#include <pcl/registration/correspondence_rejection_surface_normal.h>
-#include <sampling/CopySampler.h>
-#include <sampling/CovarianceSampler.h>
-#include <sampling/RandomSampler.h>
-#include <sampling/UniformSampler.h>
+#include <sampler/CopySampler.h>
+#include <sampler/CovarianceSampler.h>
+#include <sampler/RandomSampler.h>
+#include <sampler/UniformSampler.h>
 
 #include <Eigen/Dense>
 #include <filesystem>
@@ -36,9 +34,8 @@ int main() {
   }
 
   {
-    LinearOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
-                    NearestNeighborMatcher<MatchList>>
-                    optimizer{bunny, bunny45, ErrorMetric::PointToPlane, 50};
+    LinearOptimizer<MatchList, sampler::UniformSampler, discard::Reject, NearestNeighborMatcher<MatchList>> optimizer{
+        bunny, bunny45, ErrorMetric::PointToPlane, 25};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 
@@ -57,9 +54,8 @@ int main() {
   }
 
   {
-    LinearOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
-                    NearestNeighborMatcher<MatchList>>
-                    optimizer{bunny, bunny45, ErrorMetric::Symmetric, 50};
+    LinearOptimizer<MatchList, sampler::UniformSampler, discard::Reject, NearestNeighborMatcher<MatchList>> optimizer{
+        bunny, bunny45, ErrorMetric::Symmetric, 25};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 

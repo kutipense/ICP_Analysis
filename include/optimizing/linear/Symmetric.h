@@ -4,12 +4,11 @@
 #include <external/Eigen.h>
 
 namespace linear {
-
-struct SymmetricLinear {
+struct Symmetric {
   typedef const std::vector<Eigen::Vector3f>& VVector3fConstRef;
 
-  SymmetricLinear(const VVector3fConstRef sPoints, const VVector3fConstRef tPoints, const VVector3fConstRef sNormals,
-                  const VVector3fConstRef tNormals);
+  Symmetric(const VVector3fConstRef sPoints, const VVector3fConstRef tPoints, const VVector3fConstRef sNormals,
+            const VVector3fConstRef tNormals);
 
   Eigen::Matrix4f operator()();
 

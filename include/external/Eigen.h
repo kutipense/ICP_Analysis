@@ -64,8 +64,11 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::MatrixXf)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Quaternionf)
 
 namespace Eigen {
-typedef Eigen::Matrix<float, 6, 1> Vector6f;
-typedef Eigen::Matrix<float, 6, 6> Matrix6f;
+typedef Eigen::Matrix<float, 6, 1>  Vector6f;
+typedef Eigen::Matrix<float, 6, 6>  Matrix6f;
+typedef Eigen::Matrix<float, 4, 6>  Matrix4x6;
+typedef Eigen::Matrix<float, 3, 6>  Matrix3x6;
+typedef Eigen::Matrix<u_char, 4, 1> Vector4uc;
 }  // namespace Eigen
 
 using namespace Eigen;

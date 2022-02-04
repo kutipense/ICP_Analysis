@@ -6,13 +6,14 @@
 
 #include <memory>
 
-template <typename T, typename M, typename std::enable_if<std::is_same<VertexList, T>::value, T>::type* = nullptr,
-          typename std::enable_if<std::is_same<MatchList, M>::value, M>::type* = nullptr>
+namespace discard {
 class Discard {
  public:
-  using Ptr      = std::shared_ptr<Discard<T, M>>;
-  using DataPtr  = typename T::Ptr;
-  using MatchPtr = typename M::Ptr;
+  using Ptr       = std::shared_ptr<Discard>;
+  using DataType  = VertexList;
+  using DataPtr   = VertexList::Ptr;
+  using MatchType = MatchList;
+  using MatchPtr  = MatchList::Ptr;
 
   Discard(DataPtr source_data, DataPtr target_data, MatchPtr match_list)
       : source_data_(source_data), target_data_(target_data), match_list_(match_list) {}
@@ -27,5 +28,6 @@ class Discard {
   DataPtr  target_data_;
   MatchPtr match_list_;
 };
+}  // namespace discard
 
 #endif

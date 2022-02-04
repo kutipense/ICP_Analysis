@@ -72,7 +72,7 @@ class PoseIncrement {
 
 class ProcrustesAligner {
  public:
-  Matrix4f estimatePose(const VectorEigen3f& sourcePoints, const VectorEigen3f& targetPoints) {
+  Matrix4f estimatePose(const std::vector<Vector3f>& sourcePoints, const std::vector<Vector3f>& targetPoints) {
     ASSERT(sourcePoints.size() == targetPoints.size() &&
            "The number of source and target points should be the same, since every source point is matched with "
            "corresponding target point.");
@@ -100,7 +100,7 @@ class ProcrustesAligner {
   }
 
  private:
-  Vector3f computeMean(const VectorEigen3f& points) {
+  Vector3f computeMean(const std::vector<Vector3f>& points) {
     // Compute the mean of input points.
     const unsigned nPoints = points.size();
     Vector3f       mean    = Vector3f::Zero();
@@ -109,8 +109,8 @@ class ProcrustesAligner {
     return mean;
   }
 
-  Matrix3f estimateRotation(const VectorEigen3f& sourcePoints, const Vector3f& sourceMean,
-                            const VectorEigen3f& targetPoints, const Vector3f& targetMean) {
+  Matrix3f estimateRotation(const std::vector<Vector3f>& sourcePoints, const Vector3f& sourceMean,
+                            const std::vector<Vector3f>& targetPoints, const Vector3f& targetMean) {
     // Estimate the rotation from source to target points, following the Procrustes algorithm.
     // To compute the singular value decomposition you can use JacobiSVD() from Eigen.
     const unsigned nPoints = sourcePoints.size();
