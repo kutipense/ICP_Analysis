@@ -4,6 +4,9 @@
 #include <ceres/rotation.h>
 #include <optimizing/Helpers.h>
 #include <optimizing/Optimizer.h>
+#include <optimizing/linear/PointToPlaneLinear.h>
+#include <optimizing/linear/SymmetricLinear.h>
+#include <pcl/common/transforms.h>
 
 template <typename T, typename M, typename SamplerType, typename DiscardType, typename MatcherType>
 class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, MatcherType> {
@@ -14,21 +17,45 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
       : Optimizer<T, M, SamplerType, DiscardType, MatcherType>(source, target, error_metric, m_nIterations, weight) {}
 
   virtual void optimize(Eigen::Matrix4f& initialPose) override {
-    typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.001f);
+    typename SamplerType::Ptr sampler  = std::make_shared<SamplerType>(this->source, 0.002f);
     typename T::Ptr           sampled  = sampler->sample();
-    typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.001f);
+    typename SamplerType::Ptr sampler2 = std::make_shared<SamplerType>(this->target, 0.002f);
     typename T::Ptr           sampled2 = sampler2->sample();
     typename MatcherType::Ptr matcher;
+
+    auto sourcePC = VertexList::toPCL<pcl::PointXYZ>(this->source->vertices);
+
+    // std::cout << sampled->vertices.size() << std::endl;
 
     // sampled->exportToOFF("bunnySampledICP.off");
     // sampled2->exportToOFF("bunny45SampledICP.off");
 
     // The initial estimate can be given as an argument.
+
+    Eigen::AngleAxisd rollAngle(0.5, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd yawAngle(0.0, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd pitchAngle(0.0, Eigen::Vector3d::UnitX());
+
+    Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
+
+    Eigen::Matrix3d rotationMatrix = q.matrix();
+    Eigen::Matrix4f fakeTr         = Eigen::Matrix4f::Identity();
+    fakeTr.block(0, 0, 3, 3)       = rotationMatrix.cast<float>();
+    fakeTr.block(0, 3, 3, 1)       = Eigen::Vector3f(0.0, .0, -0.0);
+
+    auto _t1           = VertexList::toEigen(sampled->vertices);
+    auto _t2           = VertexList::toEigen(sampled->normals);
+    auto t1            = VertexList::fromEigen(this->transformPoints(_t1, fakeTr));
+    auto t2            = VertexList::fromEigen(this->transformNormals(_t2, fakeTr));
+    sampled2->vertices = t1->vertices;
+    sampled2->normals  = t2->vertices;
+    sampled2->exportToOFF("bunnyFake.off");
+
     Eigen::Matrix4f estimatedPose = initialPose;
 
     for (size_t i = 0; i < this->m_nIterations; ++i) {
       // Compute the matches.
-      std::cout << "Matching points ..." << std::endl;
+      // std::cout << "Matching points ..." << std::endl;
       clock_t begin = clock();
 
       auto transformedPoints  = this->transformPoints(sampled->vertices, estimatedPose);
@@ -40,7 +67,7 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
 
       clock_t end         = clock();
       double  elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
-      std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
+      // std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
 
       std::vector<Vector3f> sourcePoints;
       std::vector<Vector3f> sourceNormals;
@@ -73,14 +100,21 @@ class LinearOptimizer : public Optimizer<T, M, SamplerType, DiscardType, Matcher
 
       // Estimate the new pose
       if (this->error_metric == ErrorMetric::PointToPlane) {
-        estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, targetNormals) * estimatedPose;
+        linear::PointToPlaneLinear p2plane(sourcePoints, targetPoints, targetNormals);
+        estimatedPose = p2plane() * estimatedPose;
       } else if (this->error_metric == ErrorMetric::PointToPoint) {
         estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
       } else if (this->error_metric == ErrorMetric::Symmetric) {
-        estimatedPose = estimateSymmetric(sourcePoints, targetPoints, sourceNormals, targetNormals) * estimatedPose;
+        linear::SymmetricLinear sl(sourcePoints, targetPoints, sourceNormals, targetNormals);
+        estimatedPose = sl() * estimatedPose;
       }
 
-      std::cout << "Optimization iteration done." << std::endl;
+      // std::cout << "Optimization iteration done." << std::endl;
+
+      // VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+      // pcl::transformPointCloud(*sourcePC, *out_cloud, estimatedPose);
+      // auto v = VertexList::fromPCL(out_cloud);
+      // v->exportToOFF("bunny90ICP_" + std::to_string(i) + ".off");
     }
 
     // Store result

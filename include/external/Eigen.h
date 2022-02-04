@@ -63,6 +63,11 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix4f)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::MatrixXf)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Quaternionf)
 
+namespace Eigen {
+typedef Eigen::Matrix<float, 6, 1> Vector6f;
+typedef Eigen::Matrix<float, 6, 6> Matrix6f;
+}  // namespace Eigen
+
 using namespace Eigen;
 
 template <typename T, unsigned int n, unsigned m>

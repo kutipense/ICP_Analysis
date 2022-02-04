@@ -30,23 +30,51 @@ int main() {
   }
 
   {
-    PlyLoader loader("../dataset/3dscanrep/bunny/data/bun045.ply");
+    PlyLoader loader("../dataset/3dscanrep/bunny/data/bun090.ply");
     bunny45 = loader.load();
+    bunny45->exportToOFF("bunny90.off");
   }
 
   {
-    LMOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
-                NearestNeighborMatcher<MatchList>>
-                    optimizer{bunny, bunny45, ErrorMetric::Symmetric};
+    LinearOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
+                    NearestNeighborMatcher<MatchList>>
+                    optimizer{bunny, bunny45, ErrorMetric::PointToPlane, 50};
     Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
     optimizer.optimize(estimatedPose);
 
     auto                           bunny45PC = VertexList::toPCL<pcl::PointXYZ>(bunny->vertices);
     VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
 
+    Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
+    auto     _rot      = rot.eulerAngles(0, 1, 2);
+    float    toDegrees = 180 / 3.1415926;
+    std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
+    std::cout << estimatedPose << std::endl;
+
     pcl::transformPointCloud(*bunny45PC, *out_cloud, estimatedPose);
     auto v = VertexList::fromPCL(out_cloud);
-    v->exportToOFF("bunny45ICP.off");
+    v->exportToOFF("bunnyTransformed.off");
+  }
+
+  {
+    LinearOptimizer<VertexList, MatchList, UniformSampler<VertexList>, Reject<VertexList, MatchList>,
+                    NearestNeighborMatcher<MatchList>>
+                    optimizer{bunny, bunny45, ErrorMetric::Symmetric, 50};
+    Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
+    optimizer.optimize(estimatedPose);
+
+    auto                           bunny45PC = VertexList::toPCL<pcl::PointXYZ>(bunny->vertices);
+    VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+
+    Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
+    auto     _rot      = rot.eulerAngles(0, 1, 2);
+    float    toDegrees = 180 / 3.1415926;
+    std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
+    std::cout << estimatedPose << std::endl;
+
+    pcl::transformPointCloud(*bunny45PC, *out_cloud, estimatedPose);
+    auto v = VertexList::fromPCL(out_cloud);
+    v->exportToOFF("bunnyTransformedsym.off");
   }
 
   return 0;

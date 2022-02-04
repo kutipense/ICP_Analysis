@@ -1,15 +1,17 @@
 #ifndef __VERTEX_LIST_H__
 #define __VERTEX_LIST_H__
 
+// clang-format off
+#include <external/Eigen.h>
+// clang-format on
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <Eigen/Dense>
 #include <fstream>
 #include <memory>
-#include <vector>
 
-typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorEigen3f;
+typedef std::vector<Eigen::Vector3f> VectorEigen3f;
 
 inline double sqr_dist(std::array<double, 3> p1, std::array<double, 3> p2) {
   return std::pow(p1[0] - p2[0], 2) + std::pow(p1[1] - p2[1], 2) + std::pow(p1[2] - p2[2], 2);

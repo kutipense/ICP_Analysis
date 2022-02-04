@@ -19,7 +19,12 @@ include_directories(
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-set(LIB_FILES src/data_loader/ply_loader.cpp src/data_loader/rgbd_loader.cpp)
+set(LIB_FILES 
+  src/data_loader/ply_loader.cpp
+  src/data_loader/rgbd_loader.cpp
+  src/optimizing/linear/symmetric_linear.cpp
+  src/optimizing/linear/point_to_plane_linear.cpp
+)
 set(SOURCE_FILES src/main.cpp)
 
 add_library(FreeImageHelper src/external/FreeImageHelper.cpp)
