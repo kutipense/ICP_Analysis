@@ -7,15 +7,10 @@
 namespace sampler {
 class UniformSampler : public Sampler {
  public:
-  using Ptr           = std::shared_ptr<UniformSampler>;
-  using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
+  using Ptr = std::shared_ptr<UniformSampler>;
 
-  UniformSampler(DataPtr data_ptr, float search_radius);
-
-  UniformSampler(const UniformSampler &) = delete;
-  UniformSampler operator=(const UniformSampler &) = delete;
-
-  DataPtr sample() override;
+  UniformSampler(float search_radius);
+  VertexList::Ptr sample() override;
 
  private:
   float search_radius_;

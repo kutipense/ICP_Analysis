@@ -3,15 +3,14 @@
 #include <sampler/CovarianceSampler.h>
 
 namespace sampler {
-CovarianceSampler::CovarianceSampler(DataPtr data_ptr, size_t point_size)
-    : Sampler(data_ptr), point_size_(point_size) {}
+CovarianceSampler::CovarianceSampler(size_t point_size) : point_size_(point_size) {}
 
-CovarianceSampler::DataPtr CovarianceSampler::sample() {
-  PointCloudXYZ::Ptr inputCloud    = DataType::toPCL<pcl::PointXYZ>(this->data_->vertices);
-  PointCloudXYZ::Ptr inputNormals  = DataType::toPCL<pcl::PointXYZ>(this->data_->normals);
+VertexList::Ptr CovarianceSampler::sample() {
+  PointCloudXYZ::Ptr inputCloud    = VertexList::toPCL<pcl::PointXYZ>(this->data_->vertices);
+  PointCloudXYZ::Ptr inputNormals  = VertexList::toPCL<pcl::PointXYZ>(this->data_->normals);
   PointCloudXYZ::Ptr filteredCloud = boost::make_shared<PointCloudXYZ>();
 
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals = DataType::toPCL<pcl::Normal>(this->data_->normals);
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals = VertexList::toPCL<pcl::Normal>(this->data_->normals);
 
   pcl::CovarianceSampling<pcl::PointXYZ, pcl::Normal> filter;
   filter.setInputCloud(inputCloud);
@@ -21,7 +20,7 @@ CovarianceSampler::DataPtr CovarianceSampler::sample() {
 
   const auto indices = filter.getRemovedIndices();
 
-  CovarianceSampler::DataPtr vertex_list = std::make_shared<DataType>();
+  VertexList::Ptr vertex_list = std::make_shared<VertexList>();
 
   vertex_list->vertices.reserve(filteredCloud->size());
   vertex_list->normals.reserve(filteredCloud->size());

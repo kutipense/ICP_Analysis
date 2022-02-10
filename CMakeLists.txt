@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Release)
 find_package(PCL REQUIRED)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Ceres REQUIRED)
-add_subdirectory(lib/yaml-cpp)
+# add_subdirectory(lib/yaml-cpp)
 include_directories(
     include
     lib
@@ -26,12 +26,13 @@ set(LIB_FILES
   src/optimizing/linear/symmetric.cpp
   src/optimizing/linear/point_to_plane.cpp
   src/optimizing/linear/point_to_point.cpp
+  src/optimizing/linear_optimizer.cpp
+  src/optimizing/lm_optimizer.cpp
   src/sampler/uniform_sampler.cpp
   src/sampler/random_sampler.cpp
   src/sampler/covariance_sampler.cpp
   src/sampler/copy_sampler.cpp
   src/discard/reject.cpp
-  src/discard/surface_normal_reject.cpp
   src/matcher/nearest_neighbor_matcher.cpp
 )
 set(SOURCE_FILES src/main.cpp)

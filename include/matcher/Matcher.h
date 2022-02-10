@@ -14,16 +14,10 @@ class Matcher {
   using DataPtr  = VertexList::Ptr;
   using OutPtr   = MatchList::Ptr;
 
-  Matcher(const DataType::Vector& source_data, const DataType::Vector& target_data)
-      : source_data_(source_data), target_data_(target_data) {}
   virtual ~Matcher() = default;
 
   // return new ptr
-  virtual OutPtr match() = 0;
-
- protected:
-  const DataType::Vector& source_data_;
-  const DataType::Vector& target_data_;
+  virtual OutPtr match(const VertexList::Vector& source_data, const VertexList::Vector& target_data) = 0;
 };
 }  // namespace matcher
 

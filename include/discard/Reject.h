@@ -11,15 +11,10 @@ class Reject : public Discard {
   using Ptr           = std::shared_ptr<Reject>;
   using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  Reject(Discard::DataPtr source_data, Discard::DataPtr target_data, MatchPtr match_list);
-
-  Reject(const Reject&) = delete;
-  Reject operator=(const Reject&) = delete;
-
   void setMaxDistance(double distance);
   void setMaxAngle(double angle);
 
-  MatchPtr discard() override;
+  MatchPtr discard(DataPtr source_data, DataPtr target_data, MatchPtr match_list) override;
 
  private:
   std::optional<double> dist_;

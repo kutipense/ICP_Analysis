@@ -27,20 +27,24 @@ Matrix4f Symmetric::operator()() {
 
     if (!s.array().isFinite().all() || !t.array().isFinite().all() || !n.array().isFinite().all()) continue;
 
-    Matrix4x6 A;
-    Vector4f  b;
+    // Matrix4x6 A;
+    Vector6f A;
+    // Vector4f b;
+    float b;
 
     // clang-format off
-    A.block<1, 3>(0, 0) = (s + t).cross(n);
-    A.block<1, 3>(0, 3) = n;
-    A.block(1, 0, 3, 6) << 0.0f, s.z(), -s.y(), 1.0f, 0.0f, 0.0f, // point to point constraints
-                           -s.z(), 0.0f, s.x(), 0.0f, 1.0f, 0.0f,
-                           s.y(), -s.x(), 0.0f, 0.0f, 0.0f, 1.0f;
+    A << (s+t).cross(n),n;
+    // A.block<1, 3>(0, 0) = (s + t).cross(n);
+    // A.block<1, 3>(0, 3) = n;
+    // A.block(1, 0, 3, 6) << 0.0f, s.z(), -s.y(), 1.0f, 0.0f, 0.0f, // point to point constraints
+    //                        -s.z(), 0.0f, s.x(), 0.0f, 1.0f, 0.0f,
+    //                        s.y(), -s.x(), 0.0f, 0.0f, 0.0f, 1.0f;
     // clang-format on
 
     M.rankUpdate(A.transpose());
 
-    b << (t - s).dot(n), t - s;
+    // b << (t - s).dot(n), t - s;
+    b = (t - s).dot(n);
     ATb += A.transpose() * b;
   }
 

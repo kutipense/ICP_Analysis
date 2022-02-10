@@ -9,13 +9,8 @@ class NearestNeighborMatcher : public Matcher {
   using Ptr           = std::shared_ptr<NearestNeighborMatcher>;
   using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  NearestNeighborMatcher(const VertexList::Vector& source_data, const VertexList::Vector& target_data,
-                         int number_of_checks = 16, float max_distance = 1, int tree_size = 1);
-
-  NearestNeighborMatcher(const NearestNeighborMatcher&) = delete;
-  NearestNeighborMatcher operator=(const NearestNeighborMatcher&) = delete;
-
-  MatchList::Ptr match() override;
+  NearestNeighborMatcher(int number_of_checks = 16, float max_distance = 1, int tree_size = 1);
+  MatchList::Ptr match(const VertexList::Vector& source_data, const VertexList::Vector& target_data) override;
 
  private:
   int   num_of_checks_, tree_size_;

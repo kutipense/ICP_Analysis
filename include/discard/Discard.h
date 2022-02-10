@@ -15,18 +15,10 @@ class Discard {
   using MatchType = MatchList;
   using MatchPtr  = MatchList::Ptr;
 
-  Discard(DataPtr source_data, DataPtr target_data, MatchPtr match_list)
-      : source_data_(source_data), target_data_(target_data), match_list_(match_list) {}
-
   virtual ~Discard() = default;
 
   // return new ptr
-  virtual MatchPtr discard() = 0;
-
- protected:
-  DataPtr  source_data_;
-  DataPtr  target_data_;
-  MatchPtr match_list_;
+  virtual MatchPtr discard(DataPtr source_data, DataPtr target_data, MatchPtr match_list) = 0;
 };
 }  // namespace discard
 

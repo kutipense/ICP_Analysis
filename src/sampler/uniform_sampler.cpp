@@ -3,12 +3,11 @@
 
 namespace sampler {
 
-UniformSampler::UniformSampler(DataPtr data_ptr, float search_radius)
-    : Sampler(data_ptr), search_radius_(search_radius) {}
+UniformSampler::UniformSampler(float search_radius) : search_radius_(search_radius) {}
 
-UniformSampler::DataPtr UniformSampler::sample() {
-  PointCloudXYZ::Ptr inputCloud    = DataType::toPCL<pcl::PointXYZ>(this->data_->vertices);
-  PointCloudXYZ::Ptr inputNormals  = DataType::toPCL<pcl::PointXYZ>(this->data_->normals);
+VertexList::Ptr UniformSampler::sample() {
+  PointCloudXYZ::Ptr inputCloud    = VertexList::toPCL<pcl::PointXYZ>(this->data_->vertices);
+  PointCloudXYZ::Ptr inputNormals  = VertexList::toPCL<pcl::PointXYZ>(this->data_->normals);
   PointCloudXYZ::Ptr filteredCloud = boost::make_shared<PointCloudXYZ>();
 
   pcl::UniformSampling<pcl::PointXYZ> filter(true);
@@ -18,7 +17,7 @@ UniformSampler::DataPtr UniformSampler::sample() {
 
   const auto indices = filter.getRemovedIndices();
 
-  UniformSampler::DataPtr vertex_list = std::make_shared<DataType>();
+  VertexList::Ptr vertex_list = std::make_shared<VertexList>();
 
   vertex_list->vertices.reserve(filteredCloud->size());
   vertex_list->normals.reserve(filteredCloud->size());

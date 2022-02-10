@@ -17,28 +17,36 @@
 #include <filesystem>
 #include <iostream>
 
-int main() {
+ErrorMetric metrics[] = {ErrorMetric::PointToPoint, ErrorMetric::PointToPlane, ErrorMetric::Symmetric};
+
+int main(int argc, char* argv[]) {
   VertexList::Ptr bunnySrc;
   VertexList::Ptr bunnyDst;
 
+  u_int iter = std::atoi(argv[1]);
+  std::cout << iter << std::endl;
+
   {
+    // PlyLoader loader("../dataset/3dscanrep/dragon_stand/dragonStandRight_96.ply");
     PlyLoader loader("../dataset/3dscanrep/bunny/data/bun000.ply");
     bunnySrc = loader.load();
     bunnySrc->exportToOFF("bunnySrc.off");
   }
 
   {
+    //   PlyLoader loader("../dataset/3dscanrep/bunny/data/bun090.ply");
+    //   bunnyDst = loader.load();
     bunnyDst = std::make_shared<VertexList>();
-    Eigen::AngleAxisd rot_z(1.5707963267948966, Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd rot_y(0., Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd rot_x(0., Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rot_z(-1.52, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd rot_y(0.21, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rot_x(-0.12, Eigen::Vector3d::UnitX());
 
     Eigen::Quaternion<double> q = rot_z * rot_y * rot_x;
 
     Eigen::Matrix3d rotationMatrix = q.matrix();
     Eigen::Matrix4f fakeTr         = Eigen::Matrix4f::Identity();
     fakeTr.block(0, 0, 3, 3)       = rotationMatrix.cast<float>();
-    fakeTr.block(0, 3, 3, 1)       = Eigen::Vector3f(0.0, .0, 0.0);
+    fakeTr.block(0, 3, 3, 1)       = Eigen::Vector3f(-0.2, -0.02, 0.1);
 
     bunnyDst->vertices = Eigen::transformPoints(bunnySrc->vertices, fakeTr);
     bunnyDst->normals  = Eigen::transformNormals(bunnySrc->normals, fakeTr);
@@ -46,43 +54,41 @@ int main() {
   }
 
   {
-    LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
-        bunnySrc, bunnyDst, ErrorMetric::PointToPlane, 100};
-    Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
-    optimizer.optimize(estimatedPose);
+    auto src_sampler = std::make_shared<sampler::CovarianceSampler>(20000);
+    auto dst_sampler = std::make_shared<sampler::UniformSampler>(0.002);
+    auto matcher     = std::make_shared<matcher::NearestNeighborMatcher>();
+    auto discarder   = std::make_shared<discard::Reject>();
 
-    auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(bunnySrc->vertices);
-    VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+    discarder->setMaxAngle(1.58);
+    discarder->setMaxDistance(0.1);
 
-    Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
-    auto     _rot      = rot.eulerAngles(0, 1, 2);
-    float    toDegrees = 180 / 3.1415926;
-    std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
-    std::cout << estimatedPose << std::endl;
+    LinearOptimizer optimizer(bunnySrc, bunnyDst);
+    optimizer.setSrcSampler(src_sampler);
+    optimizer.setDstSampler(dst_sampler);
+    optimizer.setNumOfIterations(iter);
+    // optimizer.setDiscarder(discarder);
+    optimizer.setMatcher(matcher);
 
-    pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
-    auto v = VertexList::fromPCL(out_cloud);
-    v->exportToOFF("bunnyTransformed.off");
-  }
+    for (int i = 0; i < 3; i++) {
+      std::cout << "metric " << i << std::endl;
+      optimizer.setErrorMetric(metrics[i]);
 
-  {
-    LinearOptimizer<sampler::UniformSampler, discard::Reject, matcher::NearestNeighborMatcher> optimizer{
-        bunnySrc, bunnyDst, ErrorMetric::Symmetric, 100};
-    Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
-    optimizer.optimize(estimatedPose);
+      Eigen::Matrix4f estimatedPose = Eigen::Matrix4f::Identity();
+      optimizer.optimize(estimatedPose);
 
-    auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(bunnySrc->vertices);
-    VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
+      auto                           bunnyPC   = VertexList::toPCL<pcl::PointXYZ>(bunnySrc->vertices);
+      VertexList::PointCloudXYZ::Ptr out_cloud = boost::make_shared<VertexList::PointCloudXYZ>();
 
-    Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
-    auto     _rot      = rot.eulerAngles(0, 1, 2);
-    float    toDegrees = 180 / 3.1415926;
-    std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
-    std::cout << estimatedPose << std::endl;
+      // Matrix3f rot       = estimatedPose.block(0, 0, 3, 3);
+      // auto     _rot      = rot.eulerAngles(0, 1, 2);
+      // float    toDegrees = 180 / 3.1415926;
+      // std::cout << "angles: " << _rot(0) << " " << _rot(1) << " " << _rot(2) << std::endl;
+      // std::cout << estimatedPose << std::endl;
 
-    pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
-    auto v = VertexList::fromPCL(out_cloud);
-    v->exportToOFF("bunnyTransformedsym.off");
+      pcl::transformPointCloud(*bunnyPC, *out_cloud, estimatedPose);
+      auto v = VertexList::fromPCL(out_cloud);
+      v->exportToOFF("bunnyTr_" + std::to_string(i) + ".off");
+    }
   }
 
   return 0;

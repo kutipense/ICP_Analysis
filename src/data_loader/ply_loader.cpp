@@ -26,11 +26,10 @@ VertexList::Ptr PlyLoader::load() {
     if (splitted.size() == 2) params[splitted[0]] = splitted[1];
   }
 
-  std::vector<double>          gridParsed;
-  std::vector<Eigen::Vector3f> gridVector;
-  int                          height, width;
-
-  {
+  if (ply_data_.hasElement("range_grid")) {
+    std::vector<double>          gridParsed;
+    std::vector<Eigen::Vector3f> gridVector;
+    int                          height, width;
     auto gridRaw = ply_data_.getElement("range_grid").getListPropertyAnySign<size_t>("vertex_indices");
 
     gridParsed.resize(gridRaw.size());
@@ -50,36 +49,36 @@ VertexList::Ptr PlyLoader::load() {
         gridVector.push_back(Eigen::Vector3f(v[0], v[1], v[2]));
       }
     }
-  }
 
-  float maxDistance       = 0.1f;
-  float maxDistanceHalved = maxDistance / 2;
+    float maxDistance       = 0.1f;
+    float maxDistanceHalved = maxDistance / 2;
 #pragma omp parallel for
-  for (int v = 1; v < height - 1; ++v) {
-    for (int u = 1; u < width - 1; ++u) {
-      unsigned int idx = v * width + u;
+    for (int v = 1; v < height - 1; ++v) {
+      for (int u = 1; u < width - 1; ++u) {
+        unsigned int idx = v * width + u;
 
-      if (!std::isfinite(gridParsed[idx])) continue;
+        if (!std::isfinite(gridParsed[idx])) continue;
 
-      if (!std::isfinite(gridParsed[idx + 1]) || !std::isfinite(gridParsed[idx - 1]) ||
-          !std::isfinite(gridParsed[idx + width]) || !std::isfinite(gridParsed[idx - width])) {
-        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
-        continue;
+        if (!std::isfinite(gridParsed[idx + 1]) || !std::isfinite(gridParsed[idx - 1]) ||
+            !std::isfinite(gridParsed[idx + width]) || !std::isfinite(gridParsed[idx - width])) {
+          if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
+          continue;
+        }
+
+        const float du = 0.5f * (gridParsed[idx + 1] - gridParsed[idx - 1]);
+        const float dv = 0.5f * (gridParsed[idx + width] - gridParsed[idx - width]);
+        if (!std::isfinite(du) || !std::isfinite(dv) || abs(du) > maxDistanceHalved || abs(dv) > maxDistanceHalved) {
+          if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
+          continue;
+        }
+
+        auto pU = gridVector[idx + 1] - gridVector[idx - 1];
+        auto pV = gridVector[idx - width] - gridVector[idx + width];
+
+        auto n = pU.cross(pV);
+        n.normalize();
+        plyFilePtr->normals.emplace_back(n(0), n(1), n(2));
       }
-
-      const float du = 0.5f * (gridParsed[idx + 1] - gridParsed[idx - 1]);
-      const float dv = 0.5f * (gridParsed[idx + width] - gridParsed[idx - width]);
-      if (!std::isfinite(du) || !std::isfinite(dv) || abs(du) > maxDistanceHalved || abs(dv) > maxDistanceHalved) {
-        if (std::isfinite(gridParsed[idx])) plyFilePtr->normals.emplace_back(0, 0, 0);
-        continue;
-      }
-
-      auto pU = gridVector[idx + 1] - gridVector[idx - 1];
-      auto pV = gridVector[idx - width] - gridVector[idx + width];
-
-      auto n = pU.cross(pV);
-      n.normalize();
-      plyFilePtr->normals.emplace_back(n(0), n(1), n(2));
     }
   }
 

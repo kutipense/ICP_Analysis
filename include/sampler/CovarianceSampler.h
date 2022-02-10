@@ -8,15 +8,10 @@ namespace sampler {
 class CovarianceSampler : public Sampler {
  public:
   using Ptr              = std::shared_ptr<CovarianceSampler>;
-  using PointCloudXYZ    = pcl::PointCloud<pcl::PointXYZ>;
   using PointCloudNormal = pcl::PointCloud<pcl::Normal>;
 
-  CovarianceSampler(DataPtr data_ptr, size_t point_size);
-
-  CovarianceSampler(const CovarianceSampler&) = delete;
-  CovarianceSampler operator=(const CovarianceSampler&) = delete;
-
-  DataPtr sample() override;
+  CovarianceSampler(size_t point_size);
+  VertexList::Ptr sample() override;
 
  private:
   size_t point_size_;

@@ -158,4 +158,10 @@ class ProcrustesAligner {
   }
 };
 
+inline double rms_error(const VertexList::Vector& v1, const VertexList::Vector& v2) {
+  double sum = 0.0;
+  for (size_t i = 0; i < v1.size(); i++) sum += (v1[i] - v2[i]).squaredNorm();
+  return sum / v1.size();
+}
+
 #endif

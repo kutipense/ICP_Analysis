@@ -8,18 +8,19 @@
 namespace sampler {
 class Sampler {
  public:
-  using Ptr      = std::shared_ptr<Sampler>;
-  using DataType = VertexList;
-  using DataPtr  = VertexList::Ptr;
+  using Ptr           = std::shared_ptr<Sampler>;
+  using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
 
-  Sampler(DataPtr data_ptr) : data_(data_ptr) {}
+  Sampler() : data_(nullptr) {}
   virtual ~Sampler() = default;
 
   // return new ptr
-  virtual DataPtr sample() = 0;
+  virtual VertexList::Ptr sample() = 0;
+
+  void setDataPtr(VertexList::Ptr _ptr) { data_ = _ptr; }
 
  protected:
-  DataPtr data_;
+  VertexList::Ptr data_;
 };
 }  // namespace sampler
 

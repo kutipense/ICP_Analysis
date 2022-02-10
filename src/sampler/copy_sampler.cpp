@@ -1,10 +1,8 @@
 #include <sampler/CopySampler.h>
 
 namespace sampler {
-CopySampler::CopySampler(DataPtr data_ptr) : Sampler(data_ptr) {}
-
-CopySampler::DataPtr CopySampler::sample() {
-  DataPtr data_copy = std::make_shared<DataType>();
+VertexList::Ptr CopySampler::sample() {
+  VertexList::Ptr data_copy = std::make_shared<VertexList>();
 
   *data_copy = *(this->data_);
 

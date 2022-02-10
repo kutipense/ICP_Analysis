@@ -7,15 +7,10 @@
 namespace sampler {
 class RandomSampler : public Sampler {
  public:
-  using Ptr           = std::shared_ptr<RandomSampler>;
-  using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
+  using Ptr = std::shared_ptr<RandomSampler>;
 
-  RandomSampler(DataPtr data_ptr, size_t point_size);
-
-  RandomSampler(const RandomSampler&) = delete;
-  RandomSampler operator=(const RandomSampler&) = delete;
-
-  DataPtr sample() override;
+  RandomSampler(size_t point_size);
+  VertexList::Ptr sample() override;
 
  private:
   size_t point_size_;
